@@ -22,8 +22,8 @@ class SystemVisualizer : public olc::PixelGameEngine
 public:
 	std::vector<Ball> balls;
 	std::vector<Link> links;
-	Ball* highlightedBall = nullptr;
-	olc::Pixel highlightedPastColor;
+	std::vector<Ball*> highlightedBalls;
+	float mouseRadius = 0.0f;
 	
 	SystemVisualizer()
 	{
@@ -35,7 +35,7 @@ public:
 		return true;
 	}
 
-	bool OnUserUpdate(float fElapsedTime) override
+	void KeyboardInput()
 	{
 		if (GetKey(olc::SPACE).bPressed)
 		{
@@ -47,35 +47,39 @@ public:
 			ball.radius = 10.0f;
 			ball.mass = 1.0f;
 			ball.color = olc::GREY;
-			balls.push_back(ball);
+			balls.emplace_back(ball);
 		}
-		
-		float minDistance = FLT_MAX;
-		Ball* closestBall = nullptr;
+	}
+
+	void MouseInput()
+	{
+		highlightedBalls.clear();
 		for (auto& ball : balls)
 		{
 			float dx = ball.x - GetMouseX();
 			float dy = ball.y - GetMouseY();
-			float distance = dx * dx + dy * dy;
-			if (distance < 100.0f && distance < minDistance)
-			{
-				minDistance = distance;
-				closestBall = &ball;
-			}
+			float totalRadius = mouseRadius + ball.radius;
+			float distanceSquared = dx * dx + dy * dy;
+			if (*(int32_t*)&(distanceSquared -= totalRadius * totalRadius) & 0x80000000)
+				highlightedBalls.emplace_back(&ball);
 		}
+		if (GetMouseWheel() > 0)
+			mouseRadius += 1.0f;
+		else if (GetMouseWheel() < 0)
+			mouseRadius -= 1.0f;
+	}
 
-		if (highlightedBall != closestBall)
-		{
-			if (highlightedBall)
-				highlightedBall->color = highlightedPastColor;
-			if (closestBall)
-			{
-				highlightedPastColor = closestBall->color;
-				closestBall->color = olc::RED;
-			}
-			highlightedBall = closestBall;
-		}
+	bool OnUserUpdate(float fElapsedTime) override
+	{
+		KeyboardInput();
+		MouseInput();
+		Render();
+		
+		return true;
+	}
 
+	void Render()
+	{
 		Clear(olc::BLACK);
 		for (auto& ball : balls)
 		{
@@ -86,12 +90,11 @@ public:
 			if (link)
 				DrawLine(link.ball1->x, link.ball1->y, link.ball2->x, link.ball2->y, olc::WHITE);
 		}
-		
-		return true;
-	}
-
-	void Render()
-	{
+		for (auto& ball : highlightedBalls)
+		{
+			DrawCircle(ball->x, ball->y, ball->radius, olc::RED);
+		}
+		DrawCircle(GetMouseX(), GetMouseY(), mouseRadius, olc::RED);
 	}
 };
 
