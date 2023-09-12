@@ -1,6 +1,13 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
+float InvSqrt(float number)
+{
+	long i = 0x5F1FFFF9 - (*(long*)&number >> 1);
+	float tmp = *(float*)&i;
+	return tmp * 0.703952253f * (2.38924456f - number * tmp * tmp);
+}
+
 struct Ball
 {
 	olc::vf2d pos;
@@ -56,7 +63,60 @@ public:
 			acc.x += 1;
 		float mag2 = acc.mag2();
 		if (mag2 > 0)
-			balls.front().acc = acc * 0.02f / sqrt(mag2);
+			balls.front().acc = acc * 0.02f * InvSqrt(mag2);
+	}
+
+	void Collision()
+	{
+		for (int i = 0; i < balls.size(); i++)
+		{
+			for (int j = i + 1; j < balls.size(); j++)
+			{
+				olc::vf2d delta = balls[j].pos - balls[i].pos;
+				float dist2 = delta.mag2();
+				float radii = balls[j].radius + balls[i].radius;
+				if (dist2 < radii * radii && dist2 > 0.0001f)
+				{
+					float dist = sqrt(dist2);
+					olc::vf2d normal = delta / dist;
+					olc::vf2d tangent = { -normal.y, normal.x };
+					float dpTan1 = balls[i].vel.dot(tangent);
+					float dpTan2 = balls[j].vel.dot(tangent);
+					float dpNorm1 = balls[i].vel.dot(normal);
+					float dpNorm2 = balls[j].vel.dot(normal);
+					float m1 = (dpNorm1 * (balls[i].radius - balls[j].radius) + 2.0f * balls[j].radius * dpNorm2) / (balls[i].radius + balls[j].radius);
+					float m2 = (dpNorm2 * (balls[j].radius - balls[i].radius) + 2.0f * balls[i].radius * dpNorm1) / (balls[i].radius + balls[j].radius);
+					balls[i].vel = tangent * dpTan1 + normal * m1;
+					balls[j].vel = tangent * dpTan2 + normal * m2;
+					balls[i].pos = balls[j].pos - normal * radii;
+				}
+			}
+		}
+
+		// boundary collision
+		for (auto& ball : balls)
+		{
+			if (ball.pos.x < ball.radius)
+			{
+				ball.pos.x = ball.radius;
+				ball.vel.x *= -1;
+			}
+			if (ball.pos.x > ScreenWidth() - ball.radius)
+			{
+				ball.pos.x = ScreenWidth() - ball.radius;
+				ball.vel.x *= -1;
+			}
+			if (ball.pos.y < ball.radius)
+			{
+				ball.pos.y = ball.radius;
+				ball.vel.y *= -1;
+			}
+			if (ball.pos.y > ScreenHeight() - ball.radius)
+			{
+				ball.pos.y = ScreenHeight() - ball.radius;
+				ball.vel.y *= -1;
+			}
+		}
 	}
 
 	void Update()
@@ -85,6 +145,7 @@ public:
 	{
 		Unrender();
 		Controls();
+		Collision();
 		Update();
 		Render();
 
