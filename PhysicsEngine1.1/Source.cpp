@@ -3,105 +3,99 @@
 
 struct Ball
 {
-	float x, y;
-	float vx, vy;
+	olc::vf2d pos;
+	olc::vf2d vel;
+	olc::vf2d acc;
 	float radius;
-	float mass;
 	olc::Pixel color;
+
+	Ball(olc::vf2d _pos, olc::vf2d _vel, olc::vf2d _acc, float _radius, olc::Pixel _color)
+		: pos(_pos), vel(_vel), acc(_acc), radius(_radius), color(_color)
+	{}
 };
 
-struct Link
-{
-	Ball* ball1 = nullptr;
-	Ball* ball2 = nullptr;
-	operator bool() const { return ball1 && ball2; }
-};
-
-class SystemVisualizer : public olc::PixelGameEngine
+class Example : public olc::PixelGameEngine
 {
 public:
 	std::vector<Ball> balls;
-	std::vector<Link> links;
-	std::vector<Ball*> highlightedBalls;
-	float mouseRadius = 0.0f;
-	
-	SystemVisualizer()
-	{
-		sAppName = "System Visualizer";
-	}
-	
+
 	bool OnUserCreate() override
 	{
+		for (int i = 0; i < 100; i++)
+			balls.push_back(Ball(
+				{ float(rand() % ScreenWidth()), float(rand() % ScreenHeight()) },
+				{ 0, 0 },
+				{ 0, 0 },
+				10.0f,
+				olc::Pixel(rand() % 255, rand() % 255, rand() % 255)
+			));
 		return true;
 	}
 
-	void KeyboardInput()
+	void Unrender()
 	{
-		if (GetKey(olc::SPACE).bPressed)
-		{
-			Ball ball;
-			ball.x = GetMouseX();
-			ball.y = GetMouseY();
-			ball.vx = 0.0f;
-			ball.vy = 0.0f;
-			ball.radius = 10.0f;
-			ball.mass = 1.0f;
-			ball.color = olc::GREY;
-			balls.emplace_back(ball);
-		}
-	}
-
-	void MouseInput()
-	{
-		highlightedBalls.clear();
 		for (auto& ball : balls)
 		{
-			float dx = ball.x - GetMouseX();
-			float dy = ball.y - GetMouseY();
-			float totalRadius = mouseRadius + ball.radius;
-			float distanceSquared = dx * dx + dy * dy;
-			if (*(int32_t*)&(distanceSquared -= totalRadius * totalRadius) & 0x80000000)
-				highlightedBalls.emplace_back(&ball);
+			DrawCircle(ball.pos, ball.radius, olc::BLACK);
+
+			DrawLine(ball.pos, ball.pos + ball.vel * 10, olc::BLACK);
+			DrawLine(ball.pos, ball.pos + ball.acc * 100, olc::BLACK);
 		}
-		if (GetMouseWheel() > 0)
-			mouseRadius += 1.0f;
-		else if (GetMouseWheel() < 0)
-			mouseRadius -= 1.0f;
 	}
 
-	bool OnUserUpdate(float fElapsedTime) override
+	void Controls()
 	{
-		KeyboardInput();
-		MouseInput();
-		Render();
-		
-		return true;
+		olc::vf2d acc = { 0, 0 };
+		if (GetKey(olc::Key::W).bHeld)
+			acc.y -= 1;
+		if (GetKey(olc::Key::S).bHeld)
+			acc.y +=1;
+		if (GetKey(olc::Key::A).bHeld)
+			acc.x -= 1;
+		if (GetKey(olc::Key::D).bHeld)
+			acc.x += 1;
+		float mag2 = acc.mag2();
+		if (mag2 > 0)
+			balls.front().acc = acc * 0.02f / sqrt(mag2);
+	}
+
+	void Update()
+	{
+		for (auto& ball : balls)
+		{
+			ball.vel += ball.acc;
+			ball.acc = { 0, 0 };
+			ball.vel *= 0.99f;
+			ball.pos += ball.vel;
+		}
 	}
 
 	void Render()
 	{
-		Clear(olc::BLACK);
 		for (auto& ball : balls)
 		{
-			DrawCircle(ball.x, ball.y, ball.radius, ball.color);
+			DrawCircle(ball.pos, ball.radius, ball.color);
+
+			DrawLine(ball.pos, ball.pos + ball.vel * 10, olc::RED);
+			DrawLine(ball.pos, ball.pos + ball.acc * 100, olc::GREEN);
 		}
-		for (auto& link : links)
-		{
-			if (link)
-				DrawLine(link.ball1->x, link.ball1->y, link.ball2->x, link.ball2->y, olc::WHITE);
-		}
-		for (auto& ball : highlightedBalls)
-		{
-			DrawCircle(ball->x, ball->y, ball->radius, olc::RED);
-		}
-		DrawCircle(GetMouseX(), GetMouseY(), mouseRadius, olc::RED);
+	}
+
+	bool OnUserUpdate(float fElapsedTime) override
+	{
+		Unrender();
+		Controls();
+		Update();
+		Render();
+
+		return true;
 	}
 };
 
 int main()
 {
-	SystemVisualizer systemVisualizer;
-	if (systemVisualizer.Construct(1600, 900, 1, 1))
-		systemVisualizer.Start();
+	Example demo;
+	if (demo.Construct(1400, 800, 1, 1))
+		demo.Start();
 	return 0;
 }
