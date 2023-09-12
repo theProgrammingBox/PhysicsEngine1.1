@@ -14,12 +14,20 @@ struct Ball
 	olc::vf2d vel;
 	olc::vf2d acc;
 	float radius;
+	float density;
+	float invMass;
+	float invElasticity;
 	olc::Pixel color;
 
-	Ball(olc::vf2d _pos, olc::vf2d _vel, olc::vf2d _acc, float _radius, olc::Pixel _color)
-		: pos(_pos), vel(_vel), acc(_acc), radius(_radius), color(_color)
+	Ball(olc::vf2d _pos, olc::vf2d _vel, olc::vf2d _acc, float _radius, float _density, float _elasticity, olc::Pixel _color)
+		: pos(_pos), vel(_vel), acc(_acc), radius(_radius), density(_density), invMass(1.0f / (_density * 3.14159f * _radius * _radius)), invElasticity(1.0f / _elasticity), color(_color)
 	{}
 };
+
+float FloatRand(float min, float max)
+{
+	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+}
 
 class Example : public olc::PixelGameEngine
 {
@@ -30,10 +38,12 @@ public:
 	{
 		for (int i = 0; i < 1000; i++)
 			balls.push_back(Ball(
-				{ float(rand() % ScreenWidth()), float(rand() % ScreenHeight()) },
+				{ FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()) },
+				{ FloatRand(-1, 1), FloatRand(-1, 1) },
 				{ 0, 0 },
-				{ 0, 0 },
-				10.0f,
+				FloatRand(2, 16),
+				1.0f,
+				1.0f,
 				olc::Pixel(rand() % 255, rand() % 255, rand() % 255)
 			));
 		return true;
@@ -79,11 +89,13 @@ public:
 				{
 					olc::vf2d normal = delta * InvSqrt(dist2);
 					olc::vf2d vecc = balls[i].vel - balls[j].vel;
-					float dot = vecc.dot(normal);
+					float elasticity = 2.0f / (balls[i].invElasticity + balls[j].invElasticity);
+					float mass = 1.0f / (balls[i].invMass + balls[j].invMass);
+					float dot = vecc.dot(normal) * mass * elasticity;
 					if (dot > 0)
 					{
-						balls[i].vel -= normal * dot;
-						balls[j].vel += normal * dot;
+						balls[i].vel -= normal * dot * balls[i].invMass;
+						balls[j].vel += normal * dot * balls[j].invMass;
 					}
 				}
 			}
@@ -122,8 +134,8 @@ public:
 			ball.pos += ball.vel * dt;
 
 			// this overides control ball acc display, fix
-			ball.acc = { 0, 0.02 };
-			ball.vel *= 0.999f;
+			ball.acc = { 0, 0 };
+			//ball.vel *= 0.999f;
 		}
 	}
 
@@ -143,7 +155,7 @@ public:
 		Unrender();
 		Controls();
 		Collision();
-		Update(0.1f);
+		Update(1);
 		Render();
 
 		return true;
