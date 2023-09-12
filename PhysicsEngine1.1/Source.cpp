@@ -93,7 +93,6 @@ public:
 			}
 		}
 
-		// boundary collision
 		for (auto& ball : balls)
 		{
 			if (ball.pos.x < ball.radius)
