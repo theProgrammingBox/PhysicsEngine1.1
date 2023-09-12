@@ -121,6 +121,7 @@ public:
 			ball.vel += ball.acc * dt;
 			ball.pos += ball.vel * dt;
 
+			// this overides control ball acc display, fix
 			ball.acc = { 0, 0.02 };
 			ball.vel *= 0.999f;
 		}
