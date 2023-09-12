@@ -28,7 +28,7 @@ public:
 
 	bool OnUserCreate() override
 	{
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < 1000; i++)
 			balls.push_back(Ball(
 				{ float(rand() % ScreenWidth()), float(rand() % ScreenHeight()) },
 				{ 0, 0 },
@@ -77,18 +77,14 @@ public:
 				float radii = balls[j].radius + balls[i].radius;
 				if (dist2 < radii * radii && dist2 > 0.0001f)
 				{
-					float dist = sqrt(dist2);
-					olc::vf2d normal = delta / dist;
-					olc::vf2d tangent = { -normal.y, normal.x };
-					float dpTan1 = balls[i].vel.dot(tangent);
-					float dpTan2 = balls[j].vel.dot(tangent);
-					float dpNorm1 = balls[i].vel.dot(normal);
-					float dpNorm2 = balls[j].vel.dot(normal);
-					float m1 = (dpNorm1 * (balls[i].radius - balls[j].radius) + 2.0f * balls[j].radius * dpNorm2) / (balls[i].radius + balls[j].radius);
-					float m2 = (dpNorm2 * (balls[j].radius - balls[i].radius) + 2.0f * balls[i].radius * dpNorm1) / (balls[i].radius + balls[j].radius);
-					balls[i].vel = tangent * dpTan1 + normal * m1;
-					balls[j].vel = tangent * dpTan2 + normal * m2;
-					balls[i].pos = balls[j].pos - normal * radii;
+					olc::vf2d normal = delta * InvSqrt(dist2);
+					olc::vf2d vecc = balls[i].vel - balls[j].vel;
+					float dot = vecc.dot(normal);
+					if (dot > 0)
+					{
+						balls[i].vel -= normal * dot;
+						balls[j].vel += normal * dot;
+					}
 				}
 			}
 		}
@@ -118,14 +114,15 @@ public:
 		}
 	}
 
-	void Update()
+	void Update(float dt)
 	{
 		for (auto& ball : balls)
 		{
-			ball.vel += ball.acc;
-			ball.acc = { 0, 0 };
-			ball.vel *= 0.99f;
-			ball.pos += ball.vel;
+			ball.vel += ball.acc * dt;
+			ball.pos += ball.vel * dt;
+
+			ball.acc = { 0, 0.02 };
+			ball.vel *= 0.999f;
 		}
 	}
 
@@ -145,7 +142,7 @@ public:
 		Unrender();
 		Controls();
 		Collision();
-		Update();
+		Update(0.1f);
 		Render();
 
 		return true;
