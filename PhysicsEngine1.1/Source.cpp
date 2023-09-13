@@ -220,10 +220,12 @@ public:
 		bool changed2 = false;
 		int signx1, signx2, dx1, dy1, dx2, dy2;
 		int e1, e2;
+
 		// Sort vertices
 		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
 		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
 		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
+
 
 		t1x = t2x = x1; y = y1;   // Starting points
 		dx1 = (int)(x2 - x1);
@@ -487,6 +489,11 @@ public:
 		}
 	}
 
+	void DDA(int32_t x1, int32_t y1, int32_t x2, int32_t y2, olc::Pixel p = olc::WHITE)
+	{
+
+	}
+
 	int x1 = 99;
 	int y1 = 100;
 	int x2 = 200;
@@ -509,14 +516,16 @@ public:
 
 		for (auto& wall : walls)
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
-		FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
-		FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
+		RayCast2D({ float(x1), float(y1) }, { float(x2), float(y2) }, olc::BLACK);
+		RayCast2D2({ float(x1), float(y1) }, { float(x2), float(y2) }, olc::BLACK);
 
-		if (GetKey(olc::Key::K0).bPressed)
-			x = &x1, y = &y1;
 		if (GetKey(olc::Key::K1).bPressed)
-			x = &x2, y = &y2;
+			x = &x1, y = &y1;
 		if (GetKey(olc::Key::K2).bPressed)
+			x = &x2, y = &y2;
+		if (GetKey(olc::Key::K3).bPressed)
 			x = &x3, y = &y3;
 
 		// set x and y to mouse position
@@ -526,8 +535,10 @@ public:
 			*y = GetMouseY();
 		}
 
-		FT(x1, y1, x2, y2, x3, y3);
-		FT2(x1, y1, x2, y2, x3, y3);
+		/*FT(x1, y1, x2, y2, x3, y3);
+		FT2(x1, y1, x2, y2, x3, y3);*/
+		RayCast2D({ float(x1), float(y1) }, { float(x2), float(y2) }, olc::RED);
+		RayCast2D2({ float(x1), float(y1) }, { float(x2), float(y2) }, olc::RED);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
