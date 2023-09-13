@@ -1,13 +1,6 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-float InvSqrt(float number)
-{
-	long i = 0x5F1FFFF9 - (*(long*)&number >> 1);
-	float tmp = *(float*)&i;
-	return tmp * 0.703952253f * (2.38924456f - number * tmp * tmp);
-}
-
 struct Ball
 {
 	olc::vf2d pos;
@@ -28,12 +21,17 @@ struct Wall
 {
 	olc::vf2d pos1;
 	olc::vf2d pos2;
+	float length;
 	olc::vf2d normal;
 	olc::Pixel color;
 
 	Wall(olc::vf2d _pos1, olc::vf2d _pos2, olc::Pixel _color = olc::WHITE)
-		: pos1(_pos1), pos2(_pos2), normal( pos2 - pos1 ), color(_color)
-	{}
+		: pos1(_pos1), pos2(_pos2), color(_color)
+	{
+		const olc::vf2d delta = pos2 - pos1;
+		length = delta.mag();
+		normal = delta / length;
+	}
 };
 
 float FloatRand(float min, float max)
@@ -49,17 +47,19 @@ public:
 
 	bool OnUserCreate() override
 	{
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < 1024; i++)
 			balls.push_back(Ball(
-				{ FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()) },
-				{ FloatRand(-1, 1), FloatRand(-1, 1) },
-				FloatRand(2, 16)
+				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight())),
+				olc::vf2d(FloatRand(-100, 100), FloatRand(-100, 100)),
+				FloatRand(2, 16),
+				1.0f,
+				0.5f
 			));
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 8; i++)
 			walls.push_back(Wall(
-				{ FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()) },
-				{ FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()) }
+				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight())),
+				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()))
 			));
 
 		return true;
@@ -71,8 +71,8 @@ public:
 		{
 			DrawCircle(ball.pos, ball.radius, olc::BLACK);
 
-			DrawLine(ball.pos, ball.pos + ball.vel * 10, olc::BLACK);
-			DrawLine(ball.pos, ball.pos + ball.acc * 100, olc::BLACK);
+			DrawLine(ball.pos, ball.pos + ball.vel * 0.1f, olc::BLACK);
+			DrawLine(ball.pos, ball.pos + ball.acc, olc::BLACK);
 		}
 
 		for (auto& wall : walls)
@@ -92,7 +92,7 @@ public:
 			acc.x += 1;
 		float mag2 = acc.mag2();
 		if (mag2 > 0)
-			balls.front().acc = acc * 0.002f * InvSqrt(mag2);
+			balls.front().acc = acc * 0.002f / sqrt(mag2);
 	}
 
 	void Collision()
@@ -101,16 +101,14 @@ public:
 		{
 			for (int j = i + 1; j < balls.size(); j++)
 			{
-				olc::vf2d delta = balls[j].pos - balls[i].pos;
-				float dist2 = delta.mag2();
-				float radii = balls[j].radius + balls[i].radius;
-				if (dist2 < radii * radii && dist2 > 0.0001f)
+				const olc::vf2d delta = balls[j].pos - balls[i].pos;
+				const float dist = delta.mag();
+				if (dist < balls[j].radius + balls[i].radius && dist > 0.01f)
 				{
-					olc::vf2d normal = delta / sqrt(dist2);
-					olc::vf2d vecc = balls[i].vel - balls[j].vel;
-					float elasticity = 2.0f / (balls[i].invElasticity + balls[j].invElasticity);
-					float mass = 2.0f / (balls[i].invMass + balls[j].invMass);
-					float dot = vecc.dot(normal) * mass * elasticity;
+					const olc::vf2d normal = delta / dist;
+					const float mass = 2.0f / (balls[i].invMass + balls[j].invMass);
+					const float elasticity = 2.0f / (balls[i].invElasticity + balls[j].invElasticity);
+					const float dot = (balls[i].vel - balls[j].vel).dot(normal) * mass * elasticity;
 					if (dot > 0)
 					{
 						balls[i].vel -= normal * dot * balls[i].invMass;
@@ -124,21 +122,17 @@ public:
 		{
 			for (auto& wall : walls)
 			{
-				olc::vf2d wallDelta = wall.pos2 - wall.pos1;
-				float wallLength = wallDelta.mag();
-				olc::vf2d wallNormal = wallDelta / wallLength;
-				olc::vf2d ballDelta = ball.pos - wall.pos1;
-				float dot = ballDelta.dot(wallNormal);
-				dot = std::max(0.0f, std::min(dot, wallLength));
-				olc::vf2d closestPoint = wall.pos1 + wallNormal * dot;
+				const float ballToWall = (ball.pos - wall.pos1).dot(wall.normal);
+				const olc::vf2d closestPoint = wall.pos1 + wall.normal * std::max(0.0f, std::min(wall.length, ballToWall));
 
-				float dist2 = (ball.pos - closestPoint).mag2();
-				if (dist2 < ball.radius * ball.radius && dist2 > 0.0001f)
+				float dist = (ball.pos - closestPoint).mag();
+				if (dist < ball.radius && dist > 0.01f)
 				{
-					olc::vf2d ballNormal = (ball.pos - closestPoint) / sqrt(dist2);
-					float elasticity = 2.0f / (ball.invElasticity + 1.0f);
-					float dot = ball.vel.dot(ballNormal) * elasticity * 2.0f;
-					if (dot < 0)
+					const olc::vf2d ballNormal = (closestPoint - ball.pos) / dist;
+					const float mass = 2.0f;
+					const float elasticity = 2.0f / (ball.invElasticity + 1.0f);
+					const float dot = ball.vel.dot(ballNormal) * elasticity * mass;
+					if (dot > 0)
 						ball.vel -= ballNormal * dot;
 				}
 			}
@@ -177,8 +171,18 @@ public:
 			ball.pos += ball.vel * dt;
 
 			// this overides control ball acc display, fix
-			ball.acc = { 0, 0 };
+			ball.acc = { 0, 10 };
 			//ball.vel *= 0.999f;
+		}
+	}
+
+	void Simulate(float _dt, int steps)
+	{
+		const float dt = _dt / steps;
+		for (int i = 0; i < steps; i++)
+		{
+			Collision();
+			Update(dt);
 		}
 	}
 
@@ -188,8 +192,8 @@ public:
 		{
 			DrawCircle(ball.pos, ball.radius, ball.color);
 
-			DrawLine(ball.pos, ball.pos + ball.vel * 10, olc::RED);
-			DrawLine(ball.pos, ball.pos + ball.acc * 100, olc::GREEN);
+			DrawLine(ball.pos, ball.pos + ball.vel * 0.1f, olc::RED);
+			DrawLine(ball.pos, ball.pos + ball.acc, olc::GREEN);
 		}
 
 		for (auto& wall : walls)
@@ -200,8 +204,7 @@ public:
 	{
 		Unrender();
 		Controls();
-		Collision();
-		Update(fElapsedTime * 100);
+		Simulate(fElapsedTime, 10);
 		Render();
 
 		return true;
