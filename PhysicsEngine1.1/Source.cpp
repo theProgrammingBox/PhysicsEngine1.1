@@ -19,16 +19,24 @@ struct Ball
 
 struct Wall
 {
-	olc::vf2d pos1;
-	olc::vf2d pos2;
+	olc::vf2d refPos1;
+	olc::vf2d refPos2;
+	olc::vf2d center;
+	float angle;
+	float angleVel;
 	float length;
 	olc::vf2d normal;
+	olc::vf2d pos1;
+	olc::vf2d pos2;
 	olc::Pixel color;
 
 	Wall(olc::vf2d _pos1, olc::vf2d _pos2, olc::Pixel _color = olc::WHITE)
-		: pos1(_pos1), pos2(_pos2), color(_color)
+		: angle(0), angleVel(0), color(_color)
 	{
-		const olc::vf2d delta = pos2 - pos1;
+		const olc::vf2d delta = _pos2 - _pos1;
+		center = _pos1 + delta * 0.5f;
+		refPos1 = _pos1 - center;
+		refPos2 = _pos2 - center;
 		length = delta.mag();
 		normal = delta / length;
 	}
@@ -47,7 +55,7 @@ public:
 
 	bool OnUserCreate() override
 	{
-		for (int i = 0; i < 1024; i++)
+		for (int i = 0; i < 0; i++)
 			balls.push_back(Ball(
 				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight())),
 				olc::vf2d(FloatRand(-100, 100), FloatRand(-100, 100)),
@@ -56,7 +64,7 @@ public:
 				0.5f
 			));
 
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 1; i++)
 			walls.push_back(Wall(
 				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight())),
 				olc::vf2d(FloatRand(0, ScreenWidth()), FloatRand(0, ScreenHeight()))
@@ -81,18 +89,24 @@ public:
 
 	void Controls()
 	{
-		olc::vf2d acc = { 0, 0 };
+		/*olc::vf2d acc = { 0, 0 };
 		if (GetKey(olc::Key::W).bHeld)
 			acc.y -= 1;
 		if (GetKey(olc::Key::S).bHeld)
-			acc.y +=1;
+			acc.y += 1;
 		if (GetKey(olc::Key::A).bHeld)
 			acc.x -= 1;
 		if (GetKey(olc::Key::D).bHeld)
 			acc.x += 1;
 		float mag2 = acc.mag2();
 		if (mag2 > 0)
-			balls.front().acc = acc * 0.002f / sqrt(mag2);
+			balls.front().acc = acc * 0.002f / sqrt(mag2);*/
+		float angleVel = 0;
+		if (GetKey(olc::Key::A).bHeld)
+			angleVel -= 1;
+		if (GetKey(olc::Key::D).bHeld)
+			angleVel += 1;
+		walls.front().angleVel += angleVel * 0.01f;
 	}
 
 	void Collision()
@@ -117,7 +131,7 @@ public:
 			}
 		}
 
-		for (int i = 0; i < balls.size() - 1; i++)
+		for (int i = 0; i < int(balls.size()) - 1; i++)
 		{
 			for (int j = i + 1; j < balls.size(); j++)
 			{
@@ -173,6 +187,17 @@ public:
 			// this overides control ball acc display, fix
 			ball.acc = { 0, 10 };
 			//ball.vel *= 0.999f;
+		}
+
+		for (auto& wall : walls)
+		{
+			wall.angle += wall.angleVel * dt;
+			float c = cos(wall.angle);
+			float s = sin(wall.angle);
+			olc::vf2d rot0 = { c, s };
+			olc::vf2d rot1 = { -s, c };
+			wall.pos1 = wall.center + olc::vf2d(rot0.dot(wall.refPos1), rot1.dot(wall.refPos1));
+			wall.pos2 = wall.center + olc::vf2d(rot0.dot(wall.refPos2), rot1.dot(wall.refPos2));
 		}
 	}
 
