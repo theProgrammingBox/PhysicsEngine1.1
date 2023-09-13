@@ -211,9 +211,295 @@ public:
 		}
 	}
 
+	void FT(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, olc::Pixel p = olc::WHITE)
+	{
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
+
+		int t1x, t2x, y, minx, maxx, t1xp, t2xp;
+		bool changed1 = false;
+		bool changed2 = false;
+		int signx1, signx2, dx1, dy1, dx2, dy2;
+		int e1, e2;
+		// Sort vertices
+		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
+		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
+		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
+
+		t1x = t2x = x1; y = y1;   // Starting points
+		dx1 = (int)(x2 - x1);
+		if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
+		else signx1 = 1;
+		dy1 = (int)(y2 - y1);
+
+		dx2 = (int)(x3 - x1);
+		if (dx2 < 0) { dx2 = -dx2; signx2 = -1; }
+		else signx2 = 1;
+		dy2 = (int)(y3 - y1);
+
+		if (dy1 > dx1) { std::swap(dx1, dy1); changed1 = true; }
+		if (dy2 > dx2) { std::swap(dy2, dx2); changed2 = true; }
+
+		e2 = (int)(dx2 >> 1);
+		// Flat top, just process the second half
+		if (y1 == y2) goto next;
+		e1 = (int)(dx1 >> 1);
+
+		for (int i = 0; i < dx1;) {
+			t1xp = 0; t2xp = 0;
+			if (t1x < t2x) { minx = t1x; maxx = t2x; }
+			else { minx = t2x; maxx = t1x; }
+			// process first line until y value is about to change
+			while (i < dx1) {
+				i++;
+				e1 += dy1;
+				while (e1 >= dx1) {
+					e1 -= dx1;
+					if (changed1) t1xp = signx1;//t1x += signx1;
+					else          goto next1;
+				}
+				if (changed1) break;
+				else t1x += signx1;
+			}
+			// Move line
+		next1:
+			// process second line until y value is about to change
+			while (1) {
+				e2 += dy2;
+				while (e2 >= dx2) {
+					e2 -= dx2;
+					if (changed2) t2xp = signx2;//t2x += signx2;
+					else          goto next2;
+				}
+				if (changed2)     break;
+				else              t2x += signx2;
+			}
+		next2:
+			if (minx > t1x) minx = t1x;
+			if (minx > t2x) minx = t2x;
+			if (maxx < t1x) maxx = t1x;
+			if (maxx < t2x) maxx = t2x;
+			drawline(minx, maxx, y);    // Draw line from min to max points found on the y
+			// Now increase y
+			if (!changed1) t1x += signx1;
+			t1x += t1xp;
+			if (!changed2) t2x += signx2;
+			t2x += t2xp;
+			y += 1;
+			if (y == y2) break;
+		}
+	next:
+		// Second half
+		dx1 = (int)(x3 - x2); if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
+		else signx1 = 1;
+		dy1 = (int)(y3 - y2);
+		t1x = x2;
+
+		if (dy1 > dx1) {   // swap values
+			std::swap(dy1, dx1);
+			changed1 = true;
+		}
+		else changed1 = false;
+
+		e1 = (int)(dx1 >> 1);
+
+		for (int i = 0; i <= dx1; i++) {
+			t1xp = 0; t2xp = 0;
+			if (t1x < t2x) { minx = t1x; maxx = t2x; }
+			else { minx = t2x; maxx = t1x; }
+			// process first line until y value is about to change
+			while (i < dx1) {
+				e1 += dy1;
+				while (e1 >= dx1) {
+					e1 -= dx1;
+					if (changed1) { t1xp = signx1; break; }//t1x += signx1;
+					else          goto next3;
+				}
+				if (changed1) break;
+				else   	   	  t1x += signx1;
+				if (i < dx1) i++;
+			}
+		next3:
+			// process second line until y value is about to change
+			while (t2x != x3) {
+				e2 += dy2;
+				while (e2 >= dx2) {
+					e2 -= dx2;
+					if (changed2) t2xp = signx2;
+					else          goto next4;
+				}
+				if (changed2)     break;
+				else              t2x += signx2;
+			}
+		next4:
+
+			if (minx > t1x) minx = t1x;
+			if (minx > t2x) minx = t2x;
+			if (maxx < t1x) maxx = t1x;
+			if (maxx < t2x) maxx = t2x;
+			drawline(minx, maxx, y);
+			if (!changed1) t1x += signx1;
+			t1x += t1xp;
+			if (!changed2) t2x += signx2;
+			t2x += t2xp;
+			y += 1;
+			if (y > y3) return;
+		}
+	}
+
+	void FT2(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, olc::Pixel p = olc::WHITE)
+	{
+		x1 = x1 / 100;
+		x2 = x2 / 100;
+		x3 = x3 / 100;
+		y1 = y1 / 100;
+		y2 = y2 / 100;
+		y3 = y3 / 100;
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * 100, ny * 100, 100, 100, p); };
+
+		int t1x, t2x, y, minx, maxx, t1xp, t2xp;
+		bool changed1 = false;
+		bool changed2 = false;
+		int signx1, signx2, dx1, dy1, dx2, dy2;
+		int e1, e2;
+		// Sort vertices
+		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
+		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
+		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
+
+		t1x = t2x = x1; y = y1;   // Starting points
+		dx1 = (int)(x2 - x1);
+		if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
+		else signx1 = 1;
+		dy1 = (int)(y2 - y1);
+
+		dx2 = (int)(x3 - x1);
+		if (dx2 < 0) { dx2 = -dx2; signx2 = -1; }
+		else signx2 = 1;
+		dy2 = (int)(y3 - y1);
+
+		if (dy1 > dx1) { std::swap(dx1, dy1); changed1 = true; }
+		if (dy2 > dx2) { std::swap(dy2, dx2); changed2 = true; }
+
+		e2 = (int)(dx2 >> 1);
+		// Flat top, just process the second half
+		if (y1 == y2) goto next;
+		e1 = (int)(dx1 >> 1);
+
+		for (int i = 0; i < dx1;) {
+			t1xp = 0; t2xp = 0;
+			if (t1x < t2x) { minx = t1x; maxx = t2x; }
+			else { minx = t2x; maxx = t1x; }
+			// process first line until y value is about to change
+			while (i < dx1) {
+				i++;
+				e1 += dy1;
+				while (e1 >= dx1) {
+					e1 -= dx1;
+					if (changed1) t1xp = signx1;//t1x += signx1;
+					else          goto next1;
+				}
+				if (changed1) break;
+				else t1x += signx1;
+			}
+			// Move line
+		next1:
+			// process second line until y value is about to change
+			while (1) {
+				e2 += dy2;
+				while (e2 >= dx2) {
+					e2 -= dx2;
+					if (changed2) t2xp = signx2;//t2x += signx2;
+					else          goto next2;
+				}
+				if (changed2)     break;
+				else              t2x += signx2;
+			}
+		next2:
+			if (minx > t1x) minx = t1x;
+			if (minx > t2x) minx = t2x;
+			if (maxx < t1x) maxx = t1x;
+			if (maxx < t2x) maxx = t2x;
+			drawline(minx, maxx, y);    // Draw line from min to max points found on the y
+			// Now increase y
+			if (!changed1) t1x += signx1;
+			t1x += t1xp;
+			if (!changed2) t2x += signx2;
+			t2x += t2xp;
+			y += 1;
+			if (y == y2) break;
+		}
+	next:
+		// Second half
+		dx1 = (int)(x3 - x2); if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
+		else signx1 = 1;
+		dy1 = (int)(y3 - y2);
+		t1x = x2;
+
+		if (dy1 > dx1) {   // swap values
+			std::swap(dy1, dx1);
+			changed1 = true;
+		}
+		else changed1 = false;
+
+		e1 = (int)(dx1 >> 1);
+
+		for (int i = 0; i <= dx1; i++) {
+			t1xp = 0; t2xp = 0;
+			if (t1x < t2x) { minx = t1x; maxx = t2x; }
+			else { minx = t2x; maxx = t1x; }
+			// process first line until y value is about to change
+			while (i < dx1) {
+				e1 += dy1;
+				while (e1 >= dx1) {
+					e1 -= dx1;
+					if (changed1) { t1xp = signx1; break; }//t1x += signx1;
+					else          goto next3;
+				}
+				if (changed1) break;
+				else   	   	  t1x += signx1;
+				if (i < dx1) i++;
+			}
+		next3:
+			// process second line until y value is about to change
+			while (t2x != x3) {
+				e2 += dy2;
+				while (e2 >= dx2) {
+					e2 -= dx2;
+					if (changed2) t2xp = signx2;
+					else          goto next4;
+				}
+				if (changed2)     break;
+				else              t2x += signx2;
+			}
+		next4:
+
+			if (minx > t1x) minx = t1x;
+			if (minx > t2x) minx = t2x;
+			if (maxx < t1x) maxx = t1x;
+			if (maxx < t2x) maxx = t2x;
+			drawline(minx, maxx, y);
+			if (!changed1) t1x += signx1;
+			t1x += t1xp;
+			if (!changed2) t2x += signx2;
+			t2x += t2xp;
+			y += 1;
+			if (y > y3) return;
+		}
+	}
+
+	int x1 = 99;
+	int y1 = 100;
+	int x2 = 200;
+	int y2 = 150;
+	int x3 = 150;
+	int y3 = 200;
+
+	int* x = &x1;
+	int* y = &y1;
+
 	void Render()
 	{
-		for (auto& ball : balls)
+		/*for (auto& ball : balls)
 		{
 			DrawCircle(ball.pos, ball.radius, ball.color);
 
@@ -222,14 +508,33 @@ public:
 		}
 
 		for (auto& wall : walls)
-			DrawLine(wall.pos1, wall.pos2, wall.color);
+			DrawLine(wall.pos1, wall.pos2, wall.color);*/
+		FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);
+
+		if (GetKey(olc::Key::K0).bPressed)
+			x = &x1, y = &y1;
+		if (GetKey(olc::Key::K1).bPressed)
+			x = &x2, y = &y2;
+		if (GetKey(olc::Key::K2).bPressed)
+			x = &x3, y = &y3;
+
+		// set x and y to mouse position
+		if (GetMouse(0).bHeld)
+		{
+			*x = GetMouseX();
+			*y = GetMouseY();
+		}
+
+		FT(x1, y1, x2, y2, x3, y3);
+		FT2(x1, y1, x2, y2, x3, y3);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		Unrender();
+		/*Unrender();
 		Controls();
-		Simulate(fElapsedTime, 10);
+		Simulate(fElapsedTime, 10);*/
 		Render();
 
 		return true;
