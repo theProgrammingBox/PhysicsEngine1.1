@@ -97,6 +97,26 @@ public:
 
 	void Collision()
 	{
+		for (auto& ball : balls)
+		{
+			for (auto& wall : walls)
+			{
+				const float ballToWall = (ball.pos - wall.pos1).dot(wall.normal);
+				const olc::vf2d closestPoint = wall.pos1 + wall.normal * std::max(0.0f, std::min(wall.length, ballToWall));
+
+				float dist = (ball.pos - closestPoint).mag();
+				if (dist < ball.radius && dist > 0.01f)
+				{
+					const olc::vf2d ballNormal = (closestPoint - ball.pos) / dist;
+					const float mass = 2.0f;
+					const float elasticity = 2.0f / (ball.invElasticity + 1.0f);
+					const float dot = ball.vel.dot(ballNormal) * elasticity * mass;
+					if (dot > 0)
+						ball.vel -= ballNormal * dot;
+				}
+			}
+		}
+
 		for (int i = 0; i < balls.size() - 1; i++)
 		{
 			for (int j = i + 1; j < balls.size(); j++)
@@ -114,26 +134,6 @@ public:
 						balls[i].vel -= normal * dot * balls[i].invMass;
 						balls[j].vel += normal * dot * balls[j].invMass;
 					}
-				}
-			}
-		}
-
-		for (auto& ball : balls)
-		{
-			for (auto& wall : walls)
-			{
-				const float ballToWall = (ball.pos - wall.pos1).dot(wall.normal);
-				const olc::vf2d closestPoint = wall.pos1 + wall.normal * std::max(0.0f, std::min(wall.length, ballToWall));
-
-				float dist = (ball.pos - closestPoint).mag();
-				if (dist < ball.radius && dist > 0.01f)
-				{
-					const olc::vf2d ballNormal = (closestPoint - ball.pos) / dist;
-					const float mass = 2.0f;
-					const float elasticity = 2.0f / (ball.invElasticity + 1.0f);
-					const float dot = ball.vel.dot(ballNormal) * elasticity * mass;
-					if (dot > 0)
-						ball.vel -= ballNormal * dot;
 				}
 			}
 		}
