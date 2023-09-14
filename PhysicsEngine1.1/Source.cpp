@@ -201,10 +201,10 @@ public:
 		}
 	}
 
-	void Simulate(float _dt, int steps)
+	void Simulate(float _dt, int ySteps)
 	{
-		const float dt = _dt / steps;
-		for (int i = 0; i < steps; i++)
+		const float dt = _dt / ySteps;
+		for (int i = 0; i < ySteps; i++)
 		{
 			Collision();
 			Update(dt);
@@ -489,7 +489,7 @@ public:
 		}
 	}
 
-	void DDA(float x1, float y1, float x2, float y2, int scale = 1,  olc::Pixel p = olc::WHITE)
+	void DDA(float x1, float y1, float x2, float y2, int scale = 1, int size = 1, bool o = true, olc::Pixel p = olc::WHITE)
 	{
 		x1 /= scale;
 		y1 /= scale;
@@ -512,7 +512,8 @@ public:
 		if (dx < 0) {
 			truncStepx = -1;
 			totalProjectedx = (x1 - currentTruncx) * projectedStepx;
-		} else {
+		}
+		else {
 			truncStepx = 1;
 			totalProjectedx = (currentTruncx + 1.0f - x1) * projectedStepx;
 		}
@@ -520,100 +521,48 @@ public:
 		if (dy < 0) {
 			truncStepy = -1;
 			totalProjectedy = (y1 - currentTruncy) * projectedStepy;
-		} else {
+		}
+		else {
 			truncStepy = 1;
 			totalProjectedy = (currentTruncy + 1.0f - y1) * projectedStepy;
 		}
 
-		int steps = abs((int)x2 - currentTruncx) + abs((int)y2 - currentTruncy);
-		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p == olc::BLACK ? p : olc::RED);
-		for (int i = steps; i--;)
+		int ySteps = abs((int)y2 - currentTruncy);
+		if (o)
 		{
-			if (totalProjectedx < totalProjectedy) {
-				currentTruncx += truncStepx;
-				totalProjectedx += projectedStepx;
-				DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p == olc::BLACK ? p : olc::GREEN);
-			} else {
-				currentTruncy += truncStepy;
-				totalProjectedy += projectedStepy;
-				DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p == olc::BLACK ? p : olc::BLUE);
-			}
-		}
-
-		/*
-		int steps = abs((int)y2 - currentTruncy);
-		//DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
-		for (int i = steps; i--;)
-		{
-			while(true)
+			int xSteps = abs((int)x2 - currentTruncx);
+			for (int i = ySteps; i--;)
 			{
-				if (totalProjectedx < totalProjectedy) {
+				while (totalProjectedx < totalProjectedy) {
 					currentTruncx += truncStepx;
 					totalProjectedx += projectedStepx;
-				} else {
-					currentTruncy += truncStepy;
-					totalProjectedy += projectedStepy;
-					DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p);
-					break;
+					xSteps--;
 				}
+				DrawRect(currentTruncx * scale, currentTruncy * scale, size, size, p == olc::BLACK ? p : olc::YELLOW);
+				currentTruncy += truncStepy;
+				totalProjectedy += projectedStepy;
+			}
+			for (int i = xSteps; i--;)
+			{
+				currentTruncx += truncStepx;
+				totalProjectedx += projectedStepx;
+			}
+			DrawRect(currentTruncx * scale, currentTruncy * scale, size, size, p == olc::BLACK ? p : olc::RED);
+		}
+		else
+		{
+			DrawRect((currentTruncx + 1) * scale - size, (currentTruncy + 1) * scale - size, size, size, p == olc::BLACK ? p : olc::RED);
+			for (int i = ySteps; i--;)
+			{
+				while (totalProjectedx < totalProjectedy) {
+					currentTruncx += truncStepx;
+					totalProjectedx += projectedStepx;
+				}
+				currentTruncy += truncStepy;
+				totalProjectedy += projectedStepy;
+				DrawRect((currentTruncx + 1) * scale - size, (currentTruncy + 1) * scale - size, size, size, p == olc::BLACK ? p : olc::YELLOW);
 			}
 		}
-		*/
-	}
-
-	void FT2(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, olc::Pixel p = olc::WHITE)
-	{
-		x1 = x1 / scale;
-		x2 = x2 / scale;
-		x3 = x3 / scale;
-		y1 = y1 / scale;
-		y2 = y2 / scale;
-		y3 = y3 / scale;
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, scale, scale, p); };
-
-		float dx, dy, temp;
-
-		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
-		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
-		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
-
-		dx = x3 - x1;
-		dy = y3 - y1;
-		temp = (dy * dy) / (dx * dx);
-		float projectedStepx13 = sqrt(1 + temp);
-		float projectedStepy13 = sqrt(1 + 1.0f / temp);
-
-		int currentTruncx13 = x1;
-		int currentTruncy13 = y1;
-		int truncStepx13;
-		int truncStepy13;
-		float totalProjectedx13;
-		float totalProjectedy13;
-
-		if (dx < 0) {
-			truncStepx13 = -1;
-			totalProjectedx13 = (x1 - currentTruncx13) * projectedStepx13;
-		}
-		else {
-			truncStepx13 = 1;
-			totalProjectedx13 = (currentTruncx13 + 1.0f - x1) * projectedStepx13;
-		}
-
-		if (dy < 0) {
-			truncStepy13 = -1;
-			totalProjectedy13 = (y1 - currentTruncy13) * projectedStepy13;
-		}
-		else {
-			truncStepy13 = 1;
-			totalProjectedy13 = (currentTruncy13 + 1.0f - y1) * projectedStepy13;
-		}
-
-		int steps = abs((int)x2 - currentTruncx13) + abs((int)y2 - currentTruncy13);
-
-		if (y1 == y2) goto next;
-
-	next:
-		if (true);
 	}
 
 	/*
@@ -622,12 +571,12 @@ public:
 	you have a n and m scalar to scale from units to blocks
 	*/
 
-	int x1 = 170;
-	int y1 = 340;
-	int x2 = 200;
-	int y2 = 200;
-	int x3 = 150;
-	int y3 = 200;
+	int x1 = 500;
+	int y1 = 100;
+	int x2 = 1000;
+	int y2 = 400;
+	int x3 = 200;
+	int y3 = 700;
 
 	int* x = &x1;
 	int* y = &y1;
@@ -644,10 +593,15 @@ public:
 
 		for (auto& wall : walls)
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
-		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
-		FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		DDA(x1, y1, x2, y2, 1, olc::BLACK);
-		DDA(x1, y1, x2, y2, 30, olc::BLACK);
+			/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
+			FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
+		DDA(x1, y1, x3, y3, 1, 1, true, olc::BLACK);
+		DDA(x1, y1, x2, y2, 1, 1, true, olc::BLACK);
+		DDA(x2, y2, x3, y3, 1, 1, false, olc::BLACK);
+
+		DDA(x1, y1, x3, y3, 30, 30, x3 - x1 < 0, olc::BLACK);
+		DDA(x1, y1, x2, y2, 30, 20, x2 - x1 > 0, olc::BLACK);
+		DDA(x2, y2, x3, y3, 30, 10, x3 - x2 > 0, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -656,17 +610,29 @@ public:
 		if (GetKey(olc::Key::K3).bPressed)
 			x = &x3, y = &y3;
 
-		// set x and y to mouse position
 		if (GetMouse(0).bHeld)
 		{
 			*x = GetMouseX();
 			*y = GetMouseY();
 		}
 
+		if (y1 > y2) { if (x == &x1) x = &x2, y = &y2; else if (x == &x2) x = &x1, y = &y1; std::swap(y1, y2); std::swap(x1, x2); }
+		if (y1 > y3) { if (x == &x1) x = &x3, y = &y3; else if (x == &x3) x = &x1, y = &y1; std::swap(y1, y3); std::swap(x1, x3); }
+		if (y2 > y3) { if (x == &x2) x = &x3, y = &y3; else if (x == &x3) x = &x2, y = &y2; std::swap(y2, y3); std::swap(x2, x3); }
+
 		/*FT(x1, y1, x2, y2, x3, y3);
 		FT2(x1, y1, x2, y2, x3, y3);*/
-		DDA(x1, y1, x2, y2);
-		DDA(x1, y1, x2, y2, 30);
+		DDA(x1, y1, x3, y3, 1, 1, true);
+		DDA(x1, y1, x2, y2, 1, 1, true);
+		DDA(x2, y2, x3, y3, 1, 1, false);
+
+		DDA(x1, y1, x3, y3, 30, 30, x3 - x1 < 0);
+		DDA(x1, y1, x2, y2, 30, 20, x2 - x1 > 0);
+		DDA(x2, y2, x3, y3, 30, 10, x3 - x2 > 0);
+
+		printf("1: %d\n", x3 - x1);
+		printf("2: %d\n", x2 - x1);
+		printf("3: %d\n\n", x3 - x2);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
