@@ -538,7 +538,7 @@ public:
 					totalProjectedx += projectedStepx;
 					xSteps--;
 				}
-				DrawRect(currentTruncx * scale, currentTruncy * scale, size, size, p == olc::BLACK ? p : olc::YELLOW);
+				DrawRect((currentTruncx + 0.5)* scale - size * 0.5, (currentTruncy + 0.5)* scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::YELLOW);
 				currentTruncy += truncStepy;
 				totalProjectedy += projectedStepy;
 			}
@@ -547,11 +547,11 @@ public:
 				currentTruncx += truncStepx;
 				totalProjectedx += projectedStepx;
 			}
-			DrawRect(currentTruncx * scale, currentTruncy * scale, size, size, p == olc::BLACK ? p : olc::RED);
+			DrawRect((currentTruncx + 0.5)* scale - size * 0.5, (currentTruncy + 0.5)* scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::RED);
 		}
 		else
 		{
-			DrawRect((currentTruncx + 1) * scale - size, (currentTruncy + 1) * scale - size, size, size, p == olc::BLACK ? p : olc::RED);
+			DrawRect((currentTruncx + 0.5) * scale - size * 0.5, (currentTruncy + 0.5) * scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::RED);
 			for (int i = ySteps; i--;)
 			{
 				while (totalProjectedx < totalProjectedy) {
@@ -560,7 +560,7 @@ public:
 				}
 				currentTruncy += truncStepy;
 				totalProjectedy += projectedStepy;
-				DrawRect((currentTruncx + 1) * scale - size, (currentTruncy + 1) * scale - size, size, size, p == olc::BLACK ? p : olc::YELLOW);
+				DrawRect((currentTruncx + 0.5) * scale - size * 0.5, (currentTruncy + 0.5) * scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::YELLOW);
 			}
 		}
 	}
@@ -581,6 +581,10 @@ public:
 	int* x = &x1;
 	int* y = &y1;
 
+	bool a;
+	bool b;
+	bool c;
+
 	void Render()
 	{
 		/*for (auto& ball : balls)
@@ -595,13 +599,13 @@ public:
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
 			/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
 			FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		DDA(x1, y1, x3, y3, 1, 1, true, olc::BLACK);
-		DDA(x1, y1, x2, y2, 1, 1, true, olc::BLACK);
-		DDA(x2, y2, x3, y3, 1, 1, false, olc::BLACK);
+		DDA(x1, y1, x3, y3, 1, 1, a, olc::BLACK);
+		DDA(x1, y1, x2, y2, 1, 1, b, olc::BLACK);
+		DDA(x2, y2, x3, y3, 1, 1, c, olc::BLACK);
 
-		DDA(x1, y1, x3, y3, 30, 30, x3 - x1 < 0, olc::BLACK);
-		DDA(x1, y1, x2, y2, 30, 20, x2 - x1 > 0, olc::BLACK);
-		DDA(x2, y2, x3, y3, 30, 10, x3 - x2 > 0, olc::BLACK);
+		DDA(x1, y1, x3, y3, 30, 30, a, olc::BLACK);
+		DDA(x1, y1, x2, y2, 30, 20, b, olc::BLACK);
+		DDA(x2, y2, x3, y3, 30, 10, c, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -620,19 +624,32 @@ public:
 		if (y1 > y3) { if (x == &x1) x = &x3, y = &y3; else if (x == &x3) x = &x1, y = &y1; std::swap(y1, y3); std::swap(x1, x3); }
 		if (y2 > y3) { if (x == &x2) x = &x3, y = &y3; else if (x == &x3) x = &x2, y = &y2; std::swap(y2, y3); std::swap(x2, x3); }
 
+		float da = (x3 - x1);
+		float db = (x2 - x1);
+		float dc = (x3 - x2);
+
+		float aa = (y3 - y1) / da;
+		float bb = (y2 - y1) / db;
+		float cc = (y3 - y2) / dc;
+
+		//a = (da > 0) ^ (aa > cc);
+		a = (da < 0) ^ (aa < cc);
+		b = true;
+		c = true;
+
+		printf("1: %d, %f\n", a, aa);
+		printf("2: %d, %f\n", b, bb);
+		printf("3: %d, %f\n\n", c, cc);
+
 		/*FT(x1, y1, x2, y2, x3, y3);
 		FT2(x1, y1, x2, y2, x3, y3);*/
-		DDA(x1, y1, x3, y3, 1, 1, true);
-		DDA(x1, y1, x2, y2, 1, 1, true);
-		DDA(x2, y2, x3, y3, 1, 1, false);
+		DDA(x1, y1, x3, y3, 1, 1, a);
+		DDA(x1, y1, x2, y2, 1, 1, b);
+		DDA(x2, y2, x3, y3, 1, 1, c);
 
-		DDA(x1, y1, x3, y3, 30, 30, x3 - x1 < 0);
-		DDA(x1, y1, x2, y2, 30, 20, x2 - x1 > 0);
-		DDA(x2, y2, x3, y3, 30, 10, x3 - x2 > 0);
-
-		printf("1: %d\n", x3 - x1);
-		printf("2: %d\n", x2 - x1);
-		printf("3: %d\n\n", x3 - x2);
+		DDA(x1, y1, x3, y3, 30, 30, a);
+		DDA(x1, y1, x2, y2, 30, 20, b);
+		DDA(x2, y2, x3, y3, 30, 10, c);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
