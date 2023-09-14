@@ -504,14 +504,10 @@ public:
 
 		int currentTruncx = x1;
 		int currentTruncy = y1;
-
-		int steps = abs((int)x2 - currentTruncx) + abs((int)y2 - currentTruncy);
-
-		float totalProjectedx;
-		float totalProjectedy;
-
 		int truncStepx;
 		int truncStepy;
+		float totalProjectedx;
+		float totalProjectedy;
 
 		if (dx < 0)
 		{
@@ -535,20 +531,18 @@ public:
 			totalProjectedy = (currentTruncy + 1.0f - y1) * projectedStepy;
 		}
 
-		float currentStepDis = 0;
+		int steps = abs((int)x2 - currentTruncx) + abs((int)y2 - currentTruncy);
 		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
 		for (int i = steps; i--;)
 		{
 			if (totalProjectedx < totalProjectedy)
 			{
 				currentTruncx += truncStepx;
-				currentStepDis = totalProjectedx;
 				totalProjectedx += projectedStepx;
 			}
 			else
 			{
 				currentTruncy += truncStepy;
-				currentStepDis = totalProjectedy;
 				totalProjectedy += projectedStepy;
 			}
 			DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
