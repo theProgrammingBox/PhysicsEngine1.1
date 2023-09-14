@@ -213,101 +213,97 @@ public:
 
 	void FillTriangle2(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, int size = 1, olc::Pixel p = olc::WHITE)
 	{
-		/*x1 = x1 / scale;
+		x1 = x1 / scale;
 		x2 = x2 / scale;
 		x3 = x3 / scale;
 		y1 = y1 / scale;
 		y2 = y2 / scale;
 		y3 = y3 / scale;
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };*/
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+		/*auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };*/
 
 		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
 		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
 		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
 
 		float dx, dy, temp;
-		int currentTruncY = y1, ySteps;
+		int currentTruncX13 = x1, currentTruncX12 = x1, currentTruncY = y1, ySteps, maxX, minX;
+			
+			int savedTruncX13, savedTruncX12;
 
-		dx = x2 - x1;
-		dy = y2 - y1;
-		temp = (dy * dy) / (dx * dx);
-		float projectedStepx12 = sqrt(1 + temp);
-		float projectedStepy12 = sqrt(1 + 1.0f / temp);
-		int truncStepx12, savedTruncX12;
-		float totalProjectedx12, totalProjectedy12;
-		int currentTruncX12 = x1;
+			dx = x3 - x1;
+			dy = y3 - y1;
+			temp = (dy * dy) / (dx * dx);
+			float projectedStepx13 = sqrt(1 + temp);
+			float projectedStepy13 = sqrt(1 + 1.0f / temp);
 
-		if (dx < 0) {
-			truncStepx12 = -1;
-			totalProjectedx12 = (x1 - currentTruncX12) * projectedStepx12;
-		} else {
-			truncStepx12 = 1;
-			totalProjectedx12 = (currentTruncX12 + 1.0f - x1) * projectedStepx12;
-		}
-		totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
-
-		dx = x3 - x1;
-		dy = y3 - y1;
-		temp = (dy * dy) / (dx * dx);
-		float projectedStepx13 = sqrt(1 + temp);
-		float projectedStepy13 = sqrt(1 + 1.0f / temp);
-		int truncStepx13, savedTruncX13;
-		float totalProjectedx13, totalProjectedy13;
-		int currentTruncX13 = x1;
-
-		if (dx < 0) {
-			truncStepx13 = -1;
-			totalProjectedx13 = (x1 - currentTruncX13) * projectedStepx13;
-		} else {
-			truncStepx13 = 1;
-			totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
-		}
-		totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
-
-		ySteps  = abs((int)y2 - currentTruncY);
-		int xSteps12 = abs((int)x2 - currentTruncX12);
-		int xSteps13 = abs((int)x3 - currentTruncX13);
-		for (int i = ySteps ; i--;)
-		{
-			savedTruncX12 = currentTruncX12;
-			savedTruncX13 = currentTruncX13;
-
-			while (totalProjectedx12 < totalProjectedy12) {
-				currentTruncX12 += truncStepx12;
-				totalProjectedx12 += projectedStepx12;
-				xSteps12--;
+			int truncStepx13;
+			float totalProjectedx13;
+			if (dx < 0) {
+				truncStepx13 = -1;
+				totalProjectedx13 = (x1 - currentTruncX13) * projectedStepx13;
 			}
-
-			while (totalProjectedx13 < totalProjectedy13) {
-				currentTruncX13 += truncStepx13;
-				totalProjectedx13 += projectedStepx13;
-				xSteps13--;
+			else {
+				truncStepx13 = 1;
+				totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
 			}
+			float totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
 
-			int maxx = std::max(currentTruncX12, std::max(currentTruncX13, std::max(savedTruncX12, savedTruncX13)));
-			int minx = std::min(currentTruncX12, std::min(currentTruncX13, std::min(savedTruncX12, savedTruncX13)));
-
-			drawline(minx, maxx, currentTruncY);
-			currentTruncY++;
-			totalProjectedy12 += projectedStepy12;
-			totalProjectedy13 += projectedStepy13;
-		}
-
-		for (int i = xSteps12; i--;)
+		ySteps = (int)y2 - currentTruncY;
+		if (ySteps > 0)
 		{
-			currentTruncX12 += truncStepx12;
-			totalProjectedx12 += projectedStepx12;
+			dx = x2 - x1;
+			dy = y2 - y1;
+			temp = (dy * dy) / (dx * dx);
+			float projectedStepx12 = sqrt(1 + temp);
+			float projectedStepy12 = sqrt(1 + 1.0f / temp);
+			int truncStepx12;
+			float totalProjectedx12, totalProjectedy12;
+
+			if (dx < 0) {
+				truncStepx12 = -1;
+				totalProjectedx12 = (x1 - currentTruncX12) * projectedStepx12;
+			}
+			else {
+				truncStepx12 = 1;
+				totalProjectedx12 = (currentTruncX12 + 1.0f - x1) * projectedStepx12;
+			}
+			totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
+
+			for (int i = ySteps; i--;)
+			{
+				savedTruncX12 = currentTruncX12;
+				savedTruncX13 = currentTruncX13;
+
+				while (totalProjectedx12 < totalProjectedy12) {
+					currentTruncX12 += truncStepx12;
+					totalProjectedx12 += projectedStepx12;
+				}
+
+				while (totalProjectedx13 < totalProjectedy13) {
+					currentTruncX13 += truncStepx13;
+					totalProjectedx13 += projectedStepx13;
+				}
+
+				maxX = std::max(currentTruncX12, std::max(currentTruncX13, std::max(savedTruncX12, savedTruncX13)));
+				minX = std::min(currentTruncX12, std::min(currentTruncX13, std::min(savedTruncX12, savedTruncX13)));
+				drawline(minX, maxX, currentTruncY);
+
+				currentTruncY++;
+				totalProjectedy12 += projectedStepy12;
+				totalProjectedy13 += projectedStepy13;
+			}
 		}
+
+		currentTruncX12 = x2;
 
 		dx = x3 - x2;
 		dy = y3 - y2;
 		temp = (dy * dy) / (dx * dx);
 		float projectedStepx23 = sqrt(1 + temp);
 		float projectedStepy23 = sqrt(1 + 1.0f / temp);
-		int truncStepx23, savedTruncX23;
+		int truncStepx23;
 		float totalProjectedx23, totalProjectedy23;
-		int currentTruncX23 = currentTruncX12;
 
 		if (dx < 0) {
 			truncStepx23 = -1;
@@ -318,53 +314,37 @@ public:
 		}
 		totalProjectedy23 = (currentTruncY + 1.0f - y2) * projectedStepy23;
 
-		ySteps = abs((int)y3 - currentTruncY);
-		int xSteps23 = abs((int)x3 - currentTruncX23);
-		for (int i = ySteps; i--;)
+		ySteps = (int)y3 - currentTruncY;
+		if (ySteps > 0)
 		{
-			savedTruncX13 = currentTruncX13;
-			savedTruncX23 = currentTruncX23;
+			for (int i = ySteps; i--;)
+			{
+				savedTruncX13 = currentTruncX13;
+				savedTruncX12 = currentTruncX12;
 
-			while (totalProjectedx13 < totalProjectedy13) {
-				currentTruncX13 += truncStepx13;
-				totalProjectedx13 += projectedStepx13;
-				xSteps13--;
+				while (totalProjectedx13 < totalProjectedy13) {
+					currentTruncX13 += truncStepx13;
+					totalProjectedx13 += projectedStepx13;
+				}
+
+				while (totalProjectedx23 < totalProjectedy23) {
+					currentTruncX12 += truncStepx23;
+					totalProjectedx23 += projectedStepx23;
+				}
+
+				maxX = std::max(currentTruncX13, std::max(currentTruncX12, std::max(savedTruncX13, savedTruncX12)));
+				minX = std::min(currentTruncX13, std::min(currentTruncX12, std::min(savedTruncX13, savedTruncX12)));
+
+				drawline(minX, maxX, currentTruncY);
+				currentTruncY++;
+				totalProjectedy13 += projectedStepy13;
+				totalProjectedy23 += projectedStepy23;
 			}
-
-			while (totalProjectedx23 < totalProjectedy23) {
-				currentTruncX23 += truncStepx23;
-				totalProjectedx23 += projectedStepx23;
-				xSteps23--;
-			}
-
-			int maxx = std::max(currentTruncX13, std::max(currentTruncX23, std::max(savedTruncX13, savedTruncX23)));
-			int minx = std::min(currentTruncX13, std::min(currentTruncX23, std::min(savedTruncX13, savedTruncX23)));
-
-			drawline(minx, maxx, currentTruncY);
-			currentTruncY++;
-			totalProjectedy13 += projectedStepy13;
-			totalProjectedy23 += projectedStepy23;
 		}
 
-		savedTruncX13 = currentTruncX13;
-		savedTruncX23 = currentTruncX23;
-
-		for (int i = xSteps13; i--;)
-		{
-			currentTruncX13 += truncStepx13;
-			totalProjectedx13 += projectedStepx13;
-		}
-
-		for (int i = xSteps23; i--;)
-		{
-			currentTruncX23 += truncStepx23;
-			totalProjectedx23 += projectedStepx23;
-		}
-
-		int maxx = std::max(currentTruncX13, std::max(currentTruncX23, std::max(savedTruncX13, savedTruncX23)));
-		int minx = std::min(currentTruncX13, std::min(currentTruncX23, std::min(savedTruncX13, savedTruncX23)));
-
-		drawline(minx, maxx, currentTruncY);
+		maxX = std::max(currentTruncX13, std::max(currentTruncX12, (int)x3));
+		minX = std::min(currentTruncX13, std::min(currentTruncX12, (int)x3));
+		drawline(minX, maxX, currentTruncY);
 	}
 
 	/*
@@ -400,7 +380,6 @@ public:
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
 
 		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		for (int i = 100; i--;)
 			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30, olc::BLACK);
 			//FillTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
 		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
@@ -418,7 +397,6 @@ public:
 			*y = GetMouseY();
 		}
 
-		for (int i = 100; i--;)
 			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30);
 			//FillTriangle(x1, y1, x2, y2, x3, y3);
 		DrawTriangle(x1, y1, x2, y2, x3, y3);
