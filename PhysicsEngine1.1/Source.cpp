@@ -565,6 +565,90 @@ public:
 		}
 	}
 
+	void FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, int size = 1, olc::Pixel p = olc::WHITE)
+	{
+		x1 = x1 / scale;
+		x2 = x2 / scale;
+		x3 = x3 / scale;
+		y1 = y1 / scale;
+		y2 = y2 / scale;
+		y3 = y3 / scale;
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+
+		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
+		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
+		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
+
+		int currentTruncX12 = x1;
+		int currentTruncX13 = x1;
+		int currentTruncY = y1;
+
+		int savedTruncX12;
+		int savedTruncX13;
+		float dx, dy, temp;
+
+		dx = x2 - x1;
+		dy = y2 - y1;
+		temp = (dy * dy) / (dx * dx);
+		float projectedStepx12 = sqrt(1 + temp);
+		float projectedStepy12 = sqrt(1 + 1.0f / temp);
+		int truncStepx12;
+		float totalProjectedx12, totalProjectedy12;
+
+		if (dx < 0) {
+			truncStepx12 = -1;
+			totalProjectedx12 = (x1 - currentTruncX12) * projectedStepx12;
+		} else {
+			truncStepx12 = 1;
+			totalProjectedx12 = (currentTruncX12 + 1.0f - x1) * projectedStepx12;
+		}
+
+		totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
+
+		dx = x3 - x1;
+		dy = y3 - y1;
+		temp = (dy * dy) / (dx * dx);
+		float projectedStepx13 = sqrt(1 + temp);
+		float projectedStepy13 = sqrt(1 + 1.0f / temp);
+		int truncStepx13;
+		float totalProjectedx13, totalProjectedy13;
+
+		if (dx < 0) {
+			truncStepx13 = -1;
+			totalProjectedx13 = (x1 - currentTruncX13) * projectedStepx13;
+		} else {
+			truncStepx13 = 1;
+			totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
+		}
+
+		totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
+
+		int steps = abs((int)y2 - currentTruncY);
+		for (int i = steps; i--;)
+		{
+			savedTruncX12 = currentTruncX12;
+			savedTruncX13 = currentTruncX13;
+
+			while (totalProjectedx12 < totalProjectedy12) {
+				currentTruncX12 += truncStepx12;
+				totalProjectedx12 += projectedStepx12;
+			}
+
+			while (totalProjectedx13 < totalProjectedy13) {
+				currentTruncX13 += truncStepx13;
+				totalProjectedx13 += projectedStepx13;
+			}
+
+			int maxx = std::max(currentTruncX12, std::max(currentTruncX13, std::max(savedTruncX12, savedTruncX13)));
+			int minx = std::min(currentTruncX12, std::min(currentTruncX13, std::min(savedTruncX12, savedTruncX13)));
+
+			drawline(minx, maxx, currentTruncY);
+			currentTruncY++;
+			totalProjectedy12 += projectedStepy12;
+			totalProjectedy13 += projectedStepy13;
+		}
+	}
+
 	/*
 	you want n by m units for the map
 	you want n by m blocks for the collision grid
@@ -581,10 +665,6 @@ public:
 	int* x = &x1;
 	int* y = &y1;
 
-	bool a;
-	bool b;
-	bool c;
-
 	void Render()
 	{
 		/*for (auto& ball : balls)
@@ -597,15 +677,13 @@ public:
 
 		for (auto& wall : walls)
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
-			/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
-			FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		DDA(x1, y1, x3, y3, 1, 1, a, olc::BLACK);
-		DDA(x1, y1, x2, y2, 1, 1, b, olc::BLACK);
-		DDA(x2, y2, x3, y3, 1, 1, c, olc::BLACK);
 
-		DDA(x1, y1, x3, y3, 30, 30, a, olc::BLACK);
-		DDA(x1, y1, x2, y2, 30, 20, b, olc::BLACK);
-		DDA(x2, y2, x3, y3, 30, 10, c, olc::BLACK);
+		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
+		FillTriangle(x1, y1, x2, y2, x3, y3, 30, 30, olc::BLACK);
+
+		DDA(x1, y1, x3, y3, 1, 1, true, olc::BLACK);
+		DDA(x1, y1, x2, y2, 1, 1, true, olc::BLACK);
+		DDA(x2, y2, x3, y3, 1, 1, true, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -624,32 +702,12 @@ public:
 		if (y1 > y3) { if (x == &x1) x = &x3, y = &y3; else if (x == &x3) x = &x1, y = &y1; std::swap(y1, y3); std::swap(x1, x3); }
 		if (y2 > y3) { if (x == &x2) x = &x3, y = &y3; else if (x == &x3) x = &x2, y = &y2; std::swap(y2, y3); std::swap(x2, x3); }
 
-		float da = (x3 - x1);
-		float db = (x2 - x1);
-		float dc = (x3 - x2);
+		/*FT(x1, y1, x2, y2, x3, y3);*/
+		FillTriangle(x1, y1, x2, y2, x3, y3, 30, 30);
 
-		float aa = (y3 - y1) / da;
-		float bb = (y2 - y1) / db;
-		float cc = (y3 - y2) / dc;
-
-		//a = (da > 0) ^ (aa > cc);
-		a = (da < 0) ^ (aa < cc);
-		b = true;
-		c = true;
-
-		printf("1: %d, %f\n", a, aa);
-		printf("2: %d, %f\n", b, bb);
-		printf("3: %d, %f\n\n", c, cc);
-
-		/*FT(x1, y1, x2, y2, x3, y3);
-		FT2(x1, y1, x2, y2, x3, y3);*/
-		DDA(x1, y1, x3, y3, 1, 1, a);
-		DDA(x1, y1, x2, y2, 1, 1, b);
-		DDA(x2, y2, x3, y3, 1, 1, c);
-
-		DDA(x1, y1, x3, y3, 30, 30, a);
-		DDA(x1, y1, x2, y2, 30, 20, b);
-		DDA(x2, y2, x3, y3, 30, 10, c);
+		DDA(x1, y1, x3, y3, 1, 1, true);
+		DDA(x1, y1, x2, y2, 1, 1, true);
+		DDA(x2, y2, x3, y3, 1, 1, true);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
