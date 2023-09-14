@@ -227,48 +227,49 @@ public:
 		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
 
 		float dx, dy, temp;
-		int currentTruncX13 = x1, currentTruncX12 = x1, currentTruncY = y1, ySteps, maxX, minX;
+		int currentTruncY = y1, currentTruncX13 = x1, currentTruncX12, ySteps, maxX, minX;
 			
-			int savedTruncX13, savedTruncX12;
+		int savedTruncX13, savedTruncX12;
 
-			dx = x3 - x1;
-			dy = y3 - y1;
-			temp = (dy * dy) / (dx * dx);
-			float projectedStepx13 = sqrt(1 + temp);
-			float projectedStepy13 = sqrt(1 + 1.0f / temp);
+		dx = x3 - x1;
+		dy = y3 - y1;
+		temp = (dy * dy) / (dx * dx);
+		float projectedStepx13 = sqrt(1 + temp);
+		float projectedStepy13 = sqrt(1 + 1.0f / temp);
 
-			int truncStepx13;
-			float totalProjectedx13;
-			if (dx < 0) {
-				truncStepx13 = -1;
-				totalProjectedx13 = (x1 - currentTruncX13) * projectedStepx13;
-			}
-			else {
-				truncStepx13 = 1;
-				totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
-			}
-			float totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
+		int truncStepx13;
+		float totalProjectedx13;
+		if (dx < 0) {
+			truncStepx13 = -1;
+			totalProjectedx13 = (x1 - currentTruncX13) * projectedStepx13;
+		}
+		else {
+			truncStepx13 = 1;
+			totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
+		}
+		float totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
 
 		ySteps = (int)y2 - currentTruncY;
 		if (ySteps > 0)
 		{
+			currentTruncX12 = x1;
+
 			dx = x2 - x1;
 			dy = y2 - y1;
 			temp = (dy * dy) / (dx * dx);
 			float projectedStepx12 = sqrt(1 + temp);
 			float projectedStepy12 = sqrt(1 + 1.0f / temp);
-			int truncStepx12;
-			float totalProjectedx12, totalProjectedy12;
 
+			int truncStepx12;
+			float totalProjectedx12;
 			if (dx < 0) {
 				truncStepx12 = -1;
 				totalProjectedx12 = (x1 - currentTruncX12) * projectedStepx12;
-			}
-			else {
+			} else {
 				truncStepx12 = 1;
 				totalProjectedx12 = (currentTruncX12 + 1.0f - x1) * projectedStepx12;
 			}
-			totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
+			float totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
 
 			for (int i = ySteps; i--;)
 			{
@@ -294,29 +295,28 @@ public:
 				totalProjectedy13 += projectedStepy13;
 			}
 		}
-
+		
 		currentTruncX12 = x2;
-
-		dx = x3 - x2;
-		dy = y3 - y2;
-		temp = (dy * dy) / (dx * dx);
-		float projectedStepx23 = sqrt(1 + temp);
-		float projectedStepy23 = sqrt(1 + 1.0f / temp);
-		int truncStepx23;
-		float totalProjectedx23, totalProjectedy23;
-
-		if (dx < 0) {
-			truncStepx23 = -1;
-			totalProjectedx23 = (x2 - currentTruncX12) * projectedStepx23;
-		} else {
-			truncStepx23 = 1;
-			totalProjectedx23 = (currentTruncX12 + 1.0f - x2) * projectedStepx23;
-		}
-		totalProjectedy23 = (currentTruncY + 1.0f - y2) * projectedStepy23;
-
 		ySteps = (int)y3 - currentTruncY;
 		if (ySteps > 0)
 		{
+			dx = x3 - x2;
+			dy = y3 - y2;
+			temp = (dy * dy) / (dx * dx);
+			float projectedStepx23 = sqrt(1 + temp);
+			float projectedStepy23 = sqrt(1 + 1.0f / temp);
+
+			int truncStepx23;
+			float totalProjectedx23;
+			if (dx < 0) {
+				truncStepx23 = -1;
+				totalProjectedx23 = (x2 - currentTruncX12) * projectedStepx23;
+			} else {
+				truncStepx23 = 1;
+				totalProjectedx23 = (currentTruncX12 + 1.0f - x2) * projectedStepx23;
+			}
+			float totalProjectedy23 = (currentTruncY + 1.0f - y2) * projectedStepy23;
+
 			for (int i = ySteps; i--;)
 			{
 				savedTruncX13 = currentTruncX13;
@@ -352,8 +352,8 @@ public:
 	you want n by m blocks for the collision grid
 	you have a n and m scalar to scale from units to blocks
 
-	ft: 0.185
-	ft2: 0.197
+	ft: 0.185 - 0.160
+	ft2: 0.197 - new is 0.160
 	*/
 
 	int x1 = 500;
@@ -380,8 +380,9 @@ public:
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
 
 		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30, olc::BLACK);
-			//FillTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		for (int i = 100; i--;)
+			//FillTriangle2(x1, y1, x2, y2, x3, y3, 10, 10, olc::BLACK);
+			FillTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
 		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
@@ -397,9 +398,10 @@ public:
 			*y = GetMouseY();
 		}
 
-			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30);
-			//FillTriangle(x1, y1, x2, y2, x3, y3);
-		DrawTriangle(x1, y1, x2, y2, x3, y3);
+		for (int i = 100; i--;)
+			//FillTriangle2(x1, y1, x2, y2, x3, y3, 10, 10);
+			FillTriangle(x1, y1, x2, y2, x3, y3);
+		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::RED);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override

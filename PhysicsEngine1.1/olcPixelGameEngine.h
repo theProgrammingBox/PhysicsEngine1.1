@@ -2306,7 +2306,16 @@ namespace olc
 	// https://www.avrfreaks.net/sites/default/files/triangles.c
 	void PixelGameEngine::FillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, Pixel p)
 	{
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
+		const int scale = 10;
+		const int size = 10;
+		x1 = x1 / scale;
+		x2 = x2 / scale;
+		x3 = x3 / scale;
+		y1 = y1 / scale;
+		y2 = y2 / scale;
+		y3 = y3 / scale;
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+		//auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
 
 		int t1x, t2x, y, minx, maxx, t1xp, t2xp;
 		bool changed1 = false;
