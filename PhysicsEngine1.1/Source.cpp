@@ -211,369 +211,16 @@ public:
 		}
 	}
 
-	void FT(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, olc::Pixel p = olc::WHITE)
+	void FillTriangle2(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, int size = 1, olc::Pixel p = olc::WHITE)
 	{
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
-
-		int t1x, t2x, y, minx, maxx, t1xp, t2xp;
-		bool changed1 = false;
-		bool changed2 = false;
-		int signx1, signx2, dx1, dy1, dx2, dy2;
-		int e1, e2;
-
-		// Sort vertices
-		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
-		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
-		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
-
-
-		t1x = t2x = x1; y = y1;   // Starting points
-		dx1 = (int)(x2 - x1);
-		if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
-		else signx1 = 1;
-		dy1 = (int)(y2 - y1);
-
-		dx2 = (int)(x3 - x1);
-		if (dx2 < 0) { dx2 = -dx2; signx2 = -1; }
-		else signx2 = 1;
-		dy2 = (int)(y3 - y1);
-
-		if (dy1 > dx1) { std::swap(dx1, dy1); changed1 = true; }
-		if (dy2 > dx2) { std::swap(dy2, dx2); changed2 = true; }
-
-		e2 = (int)(dx2 >> 1);
-		// Flat top, just process the second half
-		if (y1 == y2) goto next;
-		e1 = (int)(dx1 >> 1);
-
-		for (int i = 0; i < dx1;) {
-			t1xp = 0; t2xp = 0;
-			if (t1x < t2x) { minx = t1x; maxx = t2x; }
-			else { minx = t2x; maxx = t1x; }
-			// process first line until y value is about to change
-			while (i < dx1) {
-				i++;
-				e1 += dy1;
-				while (e1 >= dx1) {
-					e1 -= dx1;
-					if (changed1) t1xp = signx1;//t1x += signx1;
-					else          goto next1;
-				}
-				if (changed1) break;
-				else t1x += signx1;
-			}
-			// Move line
-		next1:
-			// process second line until y value is about to change
-			while (1) {
-				e2 += dy2;
-				while (e2 >= dx2) {
-					e2 -= dx2;
-					if (changed2) t2xp = signx2;//t2x += signx2;
-					else          goto next2;
-				}
-				if (changed2)     break;
-				else              t2x += signx2;
-			}
-		next2:
-			if (minx > t1x) minx = t1x;
-			if (minx > t2x) minx = t2x;
-			if (maxx < t1x) maxx = t1x;
-			if (maxx < t2x) maxx = t2x;
-			drawline(minx, maxx, y);    // Draw line from min to max points found on the y
-			// Now increase y
-			if (!changed1) t1x += signx1;
-			t1x += t1xp;
-			if (!changed2) t2x += signx2;
-			t2x += t2xp;
-			y += 1;
-			if (y == y2) break;
-		}
-	next:
-		// Second half
-		dx1 = (int)(x3 - x2); if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
-		else signx1 = 1;
-		dy1 = (int)(y3 - y2);
-		t1x = x2;
-
-		if (dy1 > dx1) {   // swap values
-			std::swap(dy1, dx1);
-			changed1 = true;
-		}
-		else changed1 = false;
-
-		e1 = (int)(dx1 >> 1);
-
-		for (int i = 0; i <= dx1; i++) {
-			t1xp = 0; t2xp = 0;
-			if (t1x < t2x) { minx = t1x; maxx = t2x; }
-			else { minx = t2x; maxx = t1x; }
-			// process first line until y value is about to change
-			while (i < dx1) {
-				e1 += dy1;
-				while (e1 >= dx1) {
-					e1 -= dx1;
-					if (changed1) { t1xp = signx1; break; }//t1x += signx1;
-					else          goto next3;
-				}
-				if (changed1) break;
-				else   	   	  t1x += signx1;
-				if (i < dx1) i++;
-			}
-		next3:
-			// process second line until y value is about to change
-			while (t2x != x3) {
-				e2 += dy2;
-				while (e2 >= dx2) {
-					e2 -= dx2;
-					if (changed2) t2xp = signx2;
-					else          goto next4;
-				}
-				if (changed2)     break;
-				else              t2x += signx2;
-			}
-		next4:
-
-			if (minx > t1x) minx = t1x;
-			if (minx > t2x) minx = t2x;
-			if (maxx < t1x) maxx = t1x;
-			if (maxx < t2x) maxx = t2x;
-			drawline(minx, maxx, y);
-			if (!changed1) t1x += signx1;
-			t1x += t1xp;
-			if (!changed2) t2x += signx2;
-			t2x += t2xp;
-			y += 1;
-			if (y > y3) return;
-		}
-	}
-
-	void FT2(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, olc::Pixel p = olc::WHITE)
-	{
-		x1 = x1 / 100;
-		x2 = x2 / 100;
-		x3 = x3 / 100;
-		y1 = y1 / 100;
-		y2 = y2 / 100;
-		y3 = y3 / 100;
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * 100, ny * 100, 100, 100, p); };
-
-		int t1x, t2x, y, minx, maxx, t1xp, t2xp;
-		bool changed1 = false;
-		bool changed2 = false;
-		int signx1, signx2, dx1, dy1, dx2, dy2;
-		int e1, e2;
-		// Sort vertices
-		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
-		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
-		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
-
-		t1x = t2x = x1; y = y1;   // Starting points
-		dx1 = (int)(x2 - x1);
-		if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
-		else signx1 = 1;
-		dy1 = (int)(y2 - y1);
-
-		dx2 = (int)(x3 - x1);
-		if (dx2 < 0) { dx2 = -dx2; signx2 = -1; }
-		else signx2 = 1;
-		dy2 = (int)(y3 - y1);
-
-		if (dy1 > dx1) { std::swap(dx1, dy1); changed1 = true; }
-		if (dy2 > dx2) { std::swap(dy2, dx2); changed2 = true; }
-
-		e2 = (int)(dx2 >> 1);
-		// Flat top, just process the second half
-		if (y1 == y2) goto next;
-		e1 = (int)(dx1 >> 1);
-
-		for (int i = 0; i < dx1;) {
-			t1xp = 0; t2xp = 0;
-			if (t1x < t2x) { minx = t1x; maxx = t2x; }
-			else { minx = t2x; maxx = t1x; }
-			// process first line until y value is about to change
-			while (i < dx1) {
-				i++;
-				e1 += dy1;
-				while (e1 >= dx1) {
-					e1 -= dx1;
-					if (changed1) t1xp = signx1;//t1x += signx1;
-					else          goto next1;
-				}
-				if (changed1) break;
-				else t1x += signx1;
-			}
-			// Move line
-		next1:
-			// process second line until y value is about to change
-			while (1) {
-				e2 += dy2;
-				while (e2 >= dx2) {
-					e2 -= dx2;
-					if (changed2) t2xp = signx2;//t2x += signx2;
-					else          goto next2;
-				}
-				if (changed2)     break;
-				else              t2x += signx2;
-			}
-		next2:
-			if (minx > t1x) minx = t1x;
-			if (minx > t2x) minx = t2x;
-			if (maxx < t1x) maxx = t1x;
-			if (maxx < t2x) maxx = t2x;
-			drawline(minx, maxx, y);    // Draw line from min to max points found on the y
-			// Now increase y
-			if (!changed1) t1x += signx1;
-			t1x += t1xp;
-			if (!changed2) t2x += signx2;
-			t2x += t2xp;
-			y += 1;
-			if (y == y2) break;
-		}
-	next:
-		// Second half
-		dx1 = (int)(x3 - x2); if (dx1 < 0) { dx1 = -dx1; signx1 = -1; }
-		else signx1 = 1;
-		dy1 = (int)(y3 - y2);
-		t1x = x2;
-
-		if (dy1 > dx1) {   // swap values
-			std::swap(dy1, dx1);
-			changed1 = true;
-		}
-		else changed1 = false;
-
-		e1 = (int)(dx1 >> 1);
-
-		for (int i = 0; i <= dx1; i++) {
-			t1xp = 0; t2xp = 0;
-			if (t1x < t2x) { minx = t1x; maxx = t2x; }
-			else { minx = t2x; maxx = t1x; }
-			// process first line until y value is about to change
-			while (i < dx1) {
-				e1 += dy1;
-				while (e1 >= dx1) {
-					e1 -= dx1;
-					if (changed1) { t1xp = signx1; break; }//t1x += signx1;
-					else          goto next3;
-				}
-				if (changed1) break;
-				else   	   	  t1x += signx1;
-				if (i < dx1) i++;
-			}
-		next3:
-			// process second line until y value is about to change
-			while (t2x != x3) {
-				e2 += dy2;
-				while (e2 >= dx2) {
-					e2 -= dx2;
-					if (changed2) t2xp = signx2;
-					else          goto next4;
-				}
-				if (changed2)     break;
-				else              t2x += signx2;
-			}
-		next4:
-
-			if (minx > t1x) minx = t1x;
-			if (minx > t2x) minx = t2x;
-			if (maxx < t1x) maxx = t1x;
-			if (maxx < t2x) maxx = t2x;
-			drawline(minx, maxx, y);
-			if (!changed1) t1x += signx1;
-			t1x += t1xp;
-			if (!changed2) t2x += signx2;
-			t2x += t2xp;
-			y += 1;
-			if (y > y3) return;
-		}
-	}
-
-	void DDA(float x1, float y1, float x2, float y2, int scale = 1, int size = 1, bool o = true, olc::Pixel p = olc::WHITE)
-	{
-		x1 /= scale;
-		y1 /= scale;
-		x2 /= scale;
-		y2 /= scale;
-
-		float dx = x2 - x1;
-		float dy = y2 - y1;
-		float temp = (dy * dy) / (dx * dx);
-		float projectedStepx = sqrt(1 + temp);
-		float projectedStepy = sqrt(1 + 1.0f / temp);
-
-		int currentTruncx = x1;
-		int currentTruncy = y1;
-		int truncStepx;
-		int truncStepy;
-		float totalProjectedx;
-		float totalProjectedy;
-
-		if (dx < 0) {
-			truncStepx = -1;
-			totalProjectedx = (x1 - currentTruncx) * projectedStepx;
-		}
-		else {
-			truncStepx = 1;
-			totalProjectedx = (currentTruncx + 1.0f - x1) * projectedStepx;
-		}
-
-		if (dy < 0) {
-			truncStepy = -1;
-			totalProjectedy = (y1 - currentTruncy) * projectedStepy;
-		}
-		else {
-			truncStepy = 1;
-			totalProjectedy = (currentTruncy + 1.0f - y1) * projectedStepy;
-		}
-
-		int ySteps = abs((int)y2 - currentTruncy);
-		if (o)
-		{
-			int xSteps = abs((int)x2 - currentTruncx);
-			for (int i = ySteps; i--;)
-			{
-				while (totalProjectedx < totalProjectedy) {
-					currentTruncx += truncStepx;
-					totalProjectedx += projectedStepx;
-					xSteps--;
-				}
-				DrawRect((currentTruncx + 0.5)* scale - size * 0.5, (currentTruncy + 0.5)* scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::YELLOW);
-				currentTruncy += truncStepy;
-				totalProjectedy += projectedStepy;
-			}
-			for (int i = xSteps; i--;)
-			{
-				currentTruncx += truncStepx;
-				totalProjectedx += projectedStepx;
-			}
-			DrawRect((currentTruncx + 0.5)* scale - size * 0.5, (currentTruncy + 0.5)* scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::RED);
-		}
-		else
-		{
-			DrawRect((currentTruncx + 0.5) * scale - size * 0.5, (currentTruncy + 0.5) * scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::RED);
-			for (int i = ySteps; i--;)
-			{
-				while (totalProjectedx < totalProjectedy) {
-					currentTruncx += truncStepx;
-					totalProjectedx += projectedStepx;
-				}
-				currentTruncy += truncStepy;
-				totalProjectedy += projectedStepy;
-				DrawRect((currentTruncx + 0.5) * scale - size * 0.5, (currentTruncy + 0.5) * scale - size * 0.5, size, size, p == olc::BLACK ? p : olc::YELLOW);
-			}
-		}
-	}
-
-	void FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, int size = 1, olc::Pixel p = olc::WHITE)
-	{
-		x1 = x1 / scale;
+		/*x1 = x1 / scale;
 		x2 = x2 / scale;
 		x3 = x3 / scale;
 		y1 = y1 / scale;
 		y2 = y2 / scale;
 		y3 = y3 / scale;
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };*/
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
 
 		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
 		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
@@ -665,14 +312,13 @@ public:
 		if (dx < 0) {
 			truncStepx23 = -1;
 			totalProjectedx23 = (x2 - currentTruncX12) * projectedStepx23;
-		}
-		else {
+		} else {
 			truncStepx23 = 1;
 			totalProjectedx23 = (currentTruncX12 + 1.0f - x2) * projectedStepx23;
 		}
 		totalProjectedy23 = (currentTruncY + 1.0f - y2) * projectedStepy23;
 
-		ySteps  = abs((int)y3 - currentTruncY);
+		ySteps = abs((int)y3 - currentTruncY);
 		int xSteps23 = abs((int)x3 - currentTruncX23);
 		for (int i = ySteps; i--;)
 		{
@@ -725,6 +371,9 @@ public:
 	you want n by m units for the map
 	you want n by m blocks for the collision grid
 	you have a n and m scalar to scale from units to blocks
+
+	ft: 0.185
+	ft2: 0.197
 	*/
 
 	int x1 = 500;
@@ -751,11 +400,10 @@ public:
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
 
 		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		FillTriangle(x1, y1, x2, y2, x3, y3, 30, 30, olc::BLACK);
-
-		DDA(x1, y1, x3, y3, 1, 1, true, olc::BLACK);
-		DDA(x1, y1, x2, y2, 1, 1, true, olc::BLACK);
-		DDA(x2, y2, x3, y3, 1, 1, true, olc::BLACK);
+		for (int i = 100; i--;)
+			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30, olc::BLACK);
+			//FillTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -770,16 +418,10 @@ public:
 			*y = GetMouseY();
 		}
 
-		if (y1 > y2) { if (x == &x1) x = &x2, y = &y2; else if (x == &x2) x = &x1, y = &y1; std::swap(y1, y2); std::swap(x1, x2); }
-		if (y1 > y3) { if (x == &x1) x = &x3, y = &y3; else if (x == &x3) x = &x1, y = &y1; std::swap(y1, y3); std::swap(x1, x3); }
-		if (y2 > y3) { if (x == &x2) x = &x3, y = &y3; else if (x == &x3) x = &x2, y = &y2; std::swap(y2, y3); std::swap(x2, x3); }
-
-		/*FT(x1, y1, x2, y2, x3, y3);*/
-		FillTriangle(x1, y1, x2, y2, x3, y3, 30, 30);
-
-		DDA(x1, y1, x3, y3, 1, 1, true);
-		DDA(x1, y1, x2, y2, 1, 1, true);
-		DDA(x2, y2, x3, y3, 1, 1, true);
+		for (int i = 100; i--;)
+			FillTriangle2(x1, y1, x2, y2, x3, y3, 30, 30);
+			//FillTriangle(x1, y1, x2, y2, x3, y3);
+		DrawTriangle(x1, y1, x2, y2, x3, y3);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
