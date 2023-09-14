@@ -579,21 +579,17 @@ public:
 		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
 		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
 
-		int currentTruncX12 = x1;
-		int currentTruncX13 = x1;
-		int currentTruncY = y1;
-
-		int savedTruncX12;
-		int savedTruncX13;
 		float dx, dy, temp;
+		int currentTruncY = y1, ySteps;
 
 		dx = x2 - x1;
 		dy = y2 - y1;
 		temp = (dy * dy) / (dx * dx);
 		float projectedStepx12 = sqrt(1 + temp);
 		float projectedStepy12 = sqrt(1 + 1.0f / temp);
-		int truncStepx12;
+		int truncStepx12, savedTruncX12;
 		float totalProjectedx12, totalProjectedy12;
+		int currentTruncX12 = x1;
 
 		if (dx < 0) {
 			truncStepx12 = -1;
@@ -602,7 +598,6 @@ public:
 			truncStepx12 = 1;
 			totalProjectedx12 = (currentTruncX12 + 1.0f - x1) * projectedStepx12;
 		}
-
 		totalProjectedy12 = (currentTruncY + 1.0f - y1) * projectedStepy12;
 
 		dx = x3 - x1;
@@ -610,8 +605,9 @@ public:
 		temp = (dy * dy) / (dx * dx);
 		float projectedStepx13 = sqrt(1 + temp);
 		float projectedStepy13 = sqrt(1 + 1.0f / temp);
-		int truncStepx13;
+		int truncStepx13, savedTruncX13;
 		float totalProjectedx13, totalProjectedy13;
+		int currentTruncX13 = x1;
 
 		if (dx < 0) {
 			truncStepx13 = -1;
@@ -620,11 +616,12 @@ public:
 			truncStepx13 = 1;
 			totalProjectedx13 = (currentTruncX13 + 1.0f - x1) * projectedStepx13;
 		}
-
 		totalProjectedy13 = (currentTruncY + 1.0f - y1) * projectedStepy13;
 
-		int steps = abs((int)y2 - currentTruncY);
-		for (int i = steps; i--;)
+		ySteps  = abs((int)y2 - currentTruncY);
+		int xSteps12 = abs((int)x2 - currentTruncX12);
+		int xSteps13 = abs((int)x3 - currentTruncX13);
+		for (int i = ySteps ; i--;)
 		{
 			savedTruncX12 = currentTruncX12;
 			savedTruncX13 = currentTruncX13;
@@ -632,11 +629,13 @@ public:
 			while (totalProjectedx12 < totalProjectedy12) {
 				currentTruncX12 += truncStepx12;
 				totalProjectedx12 += projectedStepx12;
+				xSteps12--;
 			}
 
 			while (totalProjectedx13 < totalProjectedy13) {
 				currentTruncX13 += truncStepx13;
 				totalProjectedx13 += projectedStepx13;
+				xSteps13--;
 			}
 
 			int maxx = std::max(currentTruncX12, std::max(currentTruncX13, std::max(savedTruncX12, savedTruncX13)));
@@ -647,6 +646,79 @@ public:
 			totalProjectedy12 += projectedStepy12;
 			totalProjectedy13 += projectedStepy13;
 		}
+
+		for (int i = xSteps12; i--;)
+		{
+			currentTruncX12 += truncStepx12;
+			totalProjectedx12 += projectedStepx12;
+		}
+
+		dx = x3 - x2;
+		dy = y3 - y2;
+		temp = (dy * dy) / (dx * dx);
+		float projectedStepx23 = sqrt(1 + temp);
+		float projectedStepy23 = sqrt(1 + 1.0f / temp);
+		int truncStepx23, savedTruncX23;
+		float totalProjectedx23, totalProjectedy23;
+		int currentTruncX23 = currentTruncX12;
+
+		if (dx < 0) {
+			truncStepx23 = -1;
+			totalProjectedx23 = (x2 - currentTruncX12) * projectedStepx23;
+		}
+		else {
+			truncStepx23 = 1;
+			totalProjectedx23 = (currentTruncX12 + 1.0f - x2) * projectedStepx23;
+		}
+		totalProjectedy23 = (currentTruncY + 1.0f - y2) * projectedStepy23;
+
+		ySteps  = abs((int)y3 - currentTruncY);
+		int xSteps23 = abs((int)x3 - currentTruncX23);
+		for (int i = ySteps; i--;)
+		{
+			savedTruncX13 = currentTruncX13;
+			savedTruncX23 = currentTruncX23;
+
+			while (totalProjectedx13 < totalProjectedy13) {
+				currentTruncX13 += truncStepx13;
+				totalProjectedx13 += projectedStepx13;
+				xSteps13--;
+			}
+
+			while (totalProjectedx23 < totalProjectedy23) {
+				currentTruncX23 += truncStepx23;
+				totalProjectedx23 += projectedStepx23;
+				xSteps23--;
+			}
+
+			int maxx = std::max(currentTruncX13, std::max(currentTruncX23, std::max(savedTruncX13, savedTruncX23)));
+			int minx = std::min(currentTruncX13, std::min(currentTruncX23, std::min(savedTruncX13, savedTruncX23)));
+
+			drawline(minx, maxx, currentTruncY);
+			currentTruncY++;
+			totalProjectedy13 += projectedStepy13;
+			totalProjectedy23 += projectedStepy23;
+		}
+
+		savedTruncX13 = currentTruncX13;
+		savedTruncX23 = currentTruncX23;
+
+		for (int i = xSteps13; i--;)
+		{
+			currentTruncX13 += truncStepx13;
+			totalProjectedx13 += projectedStepx13;
+		}
+
+		for (int i = xSteps23; i--;)
+		{
+			currentTruncX23 += truncStepx23;
+			totalProjectedx23 += projectedStepx23;
+		}
+
+		int maxx = std::max(currentTruncX13, std::max(currentTruncX23, std::max(savedTruncX13, savedTruncX23)));
+		int minx = std::min(currentTruncX13, std::min(currentTruncX23, std::min(savedTruncX13, savedTruncX23)));
+
+		drawline(minx, maxx, currentTruncY);
 	}
 
 	/*
