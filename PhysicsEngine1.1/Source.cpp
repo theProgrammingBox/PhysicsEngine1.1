@@ -509,24 +509,18 @@ public:
 		float totalProjectedx;
 		float totalProjectedy;
 
-		if (dx < 0)
-		{
+		if (dx < 0) {
 			truncStepx = -1;
 			totalProjectedx = (x1 - currentTruncx) * projectedStepx;
-		}
-		else
-		{
+		} else {
 			truncStepx = 1;
 			totalProjectedx = (currentTruncx + 1.0f - x1) * projectedStepx;
 		}
 
-		if (dy < 0)
-		{
+		if (dy < 0) {
 			truncStepy = -1;
 			totalProjectedy = (y1 - currentTruncy) * projectedStepy;
-		}
-		else
-		{
+		} else {
 			truncStepy = 1;
 			totalProjectedy = (currentTruncy + 1.0f - y1) * projectedStepy;
 		}
@@ -535,13 +529,10 @@ public:
 		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
 		for (int i = steps; i--;)
 		{
-			if (totalProjectedx < totalProjectedy)
-			{
+			if (totalProjectedx < totalProjectedy) {
 				currentTruncx += truncStepx;
 				totalProjectedx += projectedStepx;
-			}
-			else
-			{
+			} else {
 				currentTruncy += truncStepy;
 				totalProjectedy += projectedStepy;
 			}
