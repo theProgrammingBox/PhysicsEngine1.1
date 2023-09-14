@@ -526,19 +526,101 @@ public:
 		}
 
 		int steps = abs((int)x2 - currentTruncx) + abs((int)y2 - currentTruncy);
-		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
+		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p == olc::BLACK ? p : olc::RED);
 		for (int i = steps; i--;)
 		{
 			if (totalProjectedx < totalProjectedy) {
 				currentTruncx += truncStepx;
 				totalProjectedx += projectedStepx;
+				DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p == olc::BLACK ? p : olc::GREEN);
 			} else {
 				currentTruncy += truncStepy;
 				totalProjectedy += projectedStepy;
+				DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p == olc::BLACK ? p : olc::BLUE);
 			}
-			DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
 		}
+
+		/*
+		int steps = abs((int)y2 - currentTruncy);
+		//DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
+		for (int i = steps; i--;)
+		{
+			while(true)
+			{
+				if (totalProjectedx < totalProjectedy) {
+					currentTruncx += truncStepx;
+					totalProjectedx += projectedStepx;
+				} else {
+					currentTruncy += truncStepy;
+					totalProjectedy += projectedStepy;
+					DrawRect(currentTruncx * scale, currentTruncy * scale, scale, scale, p);
+					break;
+				}
+			}
+		}
+		*/
 	}
+
+	void FT2(float x1, float y1, float x2, float y2, float x3, float y3, int scale = 1, olc::Pixel p = olc::WHITE)
+	{
+		x1 = x1 / scale;
+		x2 = x2 / scale;
+		x3 = x3 / scale;
+		y1 = y1 / scale;
+		y2 = y2 / scale;
+		y3 = y3 / scale;
+		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, scale, scale, p); };
+
+		float dx, dy, temp;
+
+		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
+		if (y1 > y3) { std::swap(y1, y3); std::swap(x1, x3); }
+		if (y2 > y3) { std::swap(y2, y3); std::swap(x2, x3); }
+
+		dx = x3 - x1;
+		dy = y3 - y1;
+		temp = (dy * dy) / (dx * dx);
+		float projectedStepx13 = sqrt(1 + temp);
+		float projectedStepy13 = sqrt(1 + 1.0f / temp);
+
+		int currentTruncx13 = x1;
+		int currentTruncy13 = y1;
+		int truncStepx13;
+		int truncStepy13;
+		float totalProjectedx13;
+		float totalProjectedy13;
+
+		if (dx < 0) {
+			truncStepx13 = -1;
+			totalProjectedx13 = (x1 - currentTruncx13) * projectedStepx13;
+		}
+		else {
+			truncStepx13 = 1;
+			totalProjectedx13 = (currentTruncx13 + 1.0f - x1) * projectedStepx13;
+		}
+
+		if (dy < 0) {
+			truncStepy13 = -1;
+			totalProjectedy13 = (y1 - currentTruncy13) * projectedStepy13;
+		}
+		else {
+			truncStepy13 = 1;
+			totalProjectedy13 = (currentTruncy13 + 1.0f - y1) * projectedStepy13;
+		}
+
+		int steps = abs((int)x2 - currentTruncx13) + abs((int)y2 - currentTruncy13);
+
+		if (y1 == y2) goto next;
+
+	next:
+		if (true);
+	}
+
+	/*
+	you want n by m units for the map
+	you want n by m blocks for the collision grid
+	you have a n and m scalar to scale from units to blocks
+	*/
 
 	int x1 = 170;
 	int y1 = 340;
