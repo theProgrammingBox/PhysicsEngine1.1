@@ -489,143 +489,76 @@ public:
 		}
 	}
 
-	void DDA(float x1, float y1, float x2, float y2, olc::Pixel p = olc::WHITE)
+	void DDA(float x1, float y1, float x2, float y2, int scale = 1,  olc::Pixel p = olc::WHITE)
 	{
-		float startx = x1;
-		float starty = y1;
+		x1 /= scale;
+		y1 /= scale;
+		x2 /= scale;
+		y2 /= scale;
 
 		float dx = x2 - x1;
 		float dy = y2 - y1;
-		float ddistance = sqrt(dx * dx + dy * dy);
-		float rayDirx = dx / ddistance;
-		float rayDiry = dy / ddistance;
+		float temp = (dy * dy) / (dx * dx);
+		float projectedStepx = sqrt(1 + temp);
+		float projectedStepy = sqrt(1 + 1.0f / temp);
 
-		float rayUnitSizex = sqrt(1 + (rayDiry * rayDiry) / (rayDirx * rayDirx));
-		float rayUnitSizey = sqrt(1 + (rayDirx * rayDirx) / (rayDiry * rayDiry));
+		int currentTruncx = x1;
+		int currentTruncy = y1;
 
-		int mapCheckx = (int)startx;
-		int mapChecky = (int)starty;
+		int steps = abs((int)x2 - currentTruncx) + abs((int)y2 - currentTruncy);
 
-		float rayLengthx;
-		float rayLengthy;
+		float totalProjectedx;
+		float totalProjectedy;
 
-		int vstepx;
-		int vstepy;
+		int truncStepx;
+		int truncStepy;
 
-		if (rayDirx < 0)
+		if (dx < 0)
 		{
-			vstepx = -1;
-			rayLengthx = (startx - mapCheckx) * rayUnitSizex;
+			truncStepx = -1;
+			totalProjectedx = (x1 - currentTruncx) * projectedStepx;
 		}
 		else
 		{
-			vstepx = 1;
-			rayLengthx = (mapCheckx + 1.0f - startx) * rayUnitSizex;
+			truncStepx = 1;
+			totalProjectedx = (currentTruncx + 1.0f - x1) * projectedStepx;
 		}
 
-		if (rayDiry < 0)
+		if (dy < 0)
 		{
-			vstepy = -1;
-			rayLengthy = (starty - mapChecky) * rayUnitSizey;
+			truncStepy = -1;
+			totalProjectedy = (y1 - currentTruncy) * projectedStepy;
 		}
 		else
 		{
-			vstepy = 1;
-			rayLengthy = (mapChecky + 1.0f - starty) * rayUnitSizey;
+			truncStepy = 1;
+			totalProjectedy = (currentTruncy + 1.0f - y1) * projectedStepy;
 		}
 
-		float distance = 0;
-		while (distance < ddistance)
+		float currentStepDis = 0;
+		DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
+		for (int i = steps; i--;)
 		{
-			if (rayLengthx < rayLengthy)
+			if (totalProjectedx < totalProjectedy)
 			{
-				mapCheckx += vstepx;
-				distance = rayLengthx;
-				rayLengthx += rayUnitSizex;
+				currentTruncx += truncStepx;
+				currentStepDis = totalProjectedx;
+				totalProjectedx += projectedStepx;
 			}
 			else
 			{
-				mapChecky += vstepy;
-				distance = rayLengthy;
-				rayLengthy += rayUnitSizey;
+				currentTruncy += truncStepy;
+				currentStepDis = totalProjectedy;
+				totalProjectedy += projectedStepy;
 			}
-			Draw(mapCheckx, mapChecky, p);
+			DrawRect(currentTruncx* scale, currentTruncy* scale, scale, scale, p);
 		}
 	}
 
-	void DDA2(float x1, float y1, float x2, float y2, olc::Pixel p = olc::WHITE)
-	{
-		x1 /= 100;
-		y1 /= 100;
-		x2 /= 100;
-		y2 /= 100;
-
-		float startx = x1;
-		float starty = y1;
-
-		float dx = x2 - x1;
-		float dy = y2 - y1;
-		float ddistance = sqrt(dx * dx + dy * dy);
-		float rayDirx = dx / ddistance;
-		float rayDiry = dy / ddistance;
-
-		float rayUnitSizex = sqrt(1 + (rayDiry * rayDiry) / (rayDirx * rayDirx));
-		float rayUnitSizey = sqrt(1 + (rayDirx * rayDirx) / (rayDiry * rayDiry));
-
-		int mapCheckx = (int)startx;
-		int mapChecky = (int)starty;
-
-		float rayLengthx;
-		float rayLengthy;
-
-		int vstepx;
-		int vstepy;
-
-		if (rayDirx < 0)
-		{
-			vstepx = -1;
-			rayLengthx = (startx - mapCheckx) * rayUnitSizex;
-		}
-		else
-		{
-			vstepx = 1;
-			rayLengthx = (mapCheckx + 1.0f - startx) * rayUnitSizex;
-		}
-
-		if (rayDiry < 0)
-		{
-			vstepy = -1;
-			rayLengthy = (starty - mapChecky) * rayUnitSizey;
-		}
-		else
-		{
-			vstepy = 1;
-			rayLengthy = (mapChecky + 1.0f - starty) * rayUnitSizey;
-		}
-
-		float distance = 0;
-		while (distance < ddistance)
-		{
-			DrawRect(mapCheckx * 100, mapChecky * 100, 100, 100, p);
-			if (rayLengthx < rayLengthy)
-			{
-				mapCheckx += vstepx;
-				distance = rayLengthx;
-				rayLengthx += rayUnitSizex;
-			}
-			else
-			{
-				mapChecky += vstepy;
-				distance = rayLengthy;
-				rayLengthy += rayUnitSizey;
-			}
-		}
-	}
-
-	int x1 = 99;
-	int y1 = 100;
+	int x1 = 170;
+	int y1 = 340;
 	int x2 = 200;
-	int y2 = 150;
+	int y2 = 200;
 	int x3 = 150;
 	int y3 = 200;
 
@@ -646,8 +579,8 @@ public:
 			DrawLine(wall.pos1, wall.pos2, wall.color);*/
 		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);
 		FT2(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
-		DDA(x1, y1, x2, y2, olc::BLACK);
-		DDA2(x1, y1, x2, y2, olc::BLACK);
+		DDA(x1, y1, x2, y2, 1, olc::BLACK);
+		DDA(x1, y1, x2, y2, 30, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -666,7 +599,7 @@ public:
 		/*FT(x1, y1, x2, y2, x3, y3);
 		FT2(x1, y1, x2, y2, x3, y3);*/
 		DDA(x1, y1, x2, y2);
-		DDA2(x1, y1, x2, y2);
+		DDA(x1, y1, x2, y2, 30);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
