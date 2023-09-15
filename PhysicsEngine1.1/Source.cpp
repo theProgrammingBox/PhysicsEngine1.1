@@ -351,13 +351,32 @@ public:
 		drawline(minX, maxX, currentTruncY, 10);
 	}
 
+	void FillCircle2(float x, float y, float radius, olc::Pixel p = olc::WHITE)
+	{
+		int scale = 30;
+		x = x / scale;
+		y = y / scale;
+		radius = radius / scale;
+		auto drawline = [&](int sx, int ex, int ny, int size = 30) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+		auto notInCircle = [&](float xx, float yy, float rr) { return xx * xx + yy * yy > rr * rr; };
+
+		float yy = 0.5 - radius;
+		for (int i = ceil(2 * radius); i--;)
+		{
+			float xx = 0.5f - radius;
+			while (notInCircle(int(xx + 0.5), int(yy + 0.5f), radius)) xx++;
+			int sx = xx;
+			while (!notInCircle(int(xx - 0.5), int(yy + 0.5f), radius)) xx++;
+			int ex = xx;
+			drawline(sx + x, ex + x, yy + y);
+			yy++;
+		}
+	}
+
 	/*
 	you want n by m units for the map
 	you want n by m blocks for the collision grid
 	you have a n and m scalar to scale from units to blocks
-
-	ft: 0.185 - 0.160
-	ft2: 0.197 - new is 0.160
 	*/
 
 	int x1 = 500;
@@ -385,9 +404,12 @@ public:
 
 		/*FT(x1, y1, x2, y2, x3, y3, olc::BLACK);*/
 		//for (int i = 100; i--;)
-			FillTriangle2(x1, y1, x2, y2, x3, y3, olc::BLACK);
+			//FillTriangle2(x1, y1, x2, y2, x3, y3, olc::BLACK);
 			//FillTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
-		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
+		//DrawTriangle(x1, y1, x2, y2, x3, y3, olc::BLACK);
+
+		FillCircle2(x1, y1, 127, olc::BLACK);
+		DrawCircle(x1, y1, 127, olc::BLACK);
 
 		if (GetKey(olc::Key::K1).bPressed)
 			x = &x1, y = &y1;
@@ -403,9 +425,12 @@ public:
 		}
 
 		//for (int i = 100; i--;)
-			FillTriangle2(x1, y1, x2, y2, x3, y3);
+			//FillTriangle2(x1, y1, x2, y2, x3, y3);
 			//FillTriangle(x1, y1, x2, y2, x3, y3);
-		DrawTriangle(x1, y1, x2, y2, x3, y3, olc::RED);
+		//DrawTriangle(x1, y1, x2, y2, x3, y3, olc::RED);
+
+		FillCircle2(x1, y1, 127);
+		DrawCircle(x1, y1, 127, olc::RED);
 	}
 
 	bool OnUserUpdate(float fElapsedTime) override
