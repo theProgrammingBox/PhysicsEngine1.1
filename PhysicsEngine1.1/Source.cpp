@@ -213,15 +213,14 @@ public:
 
 	void FillTriangle2(float x1, float y1, float x2, float y2, float x3, float y3, olc::Pixel p = olc::WHITE)
 	{
-		int scale = 10;
-		int size = 10;
+		int scale = 30;
 		x1 = x1 / scale;
 		x2 = x2 / scale;
 		x3 = x3 / scale;
 		y1 = y1 / scale;
 		y2 = y2 / scale;
 		y3 = y3 / scale;
-		auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
+		auto drawline = [&](int sx, int ex, int ny, int size) { for (int i = sx; i <= ex; i++) DrawRect(i * scale, ny * scale, size, size, p); };
 		//auto drawline = [&](int sx, int ex, int ny) { for (int i = sx; i <= ex; i++) Draw(i, ny, p); };
 
 		if (y1 > y2) { std::swap(y1, y2); std::swap(x1, x2); }
@@ -291,7 +290,7 @@ public:
 
 					maxX = std::max(currentTruncX12, std::max(currentTruncX13, std::max(savedTruncX12, savedTruncX13)));
 					minX = std::min(currentTruncX12, std::min(currentTruncX13, std::min(savedTruncX12, savedTruncX13)));
-					drawline(minX, maxX, currentTruncY);
+					drawline(minX, maxX, currentTruncY, 30);
 
 					currentTruncY++;
 					totalProjectedy12 += projectedStepy12;
@@ -339,7 +338,7 @@ public:
 					maxX = std::max(currentTruncX13, std::max(currentTruncX12, std::max(savedTruncX13, savedTruncX12)));
 					minX = std::min(currentTruncX13, std::min(currentTruncX12, std::min(savedTruncX13, savedTruncX12)));
 
-					drawline(minX, maxX, currentTruncY);
+					drawline(minX, maxX, currentTruncY, 20);
 					currentTruncY++;
 					totalProjectedy13 += projectedStepy13;
 					totalProjectedy23 += projectedStepy23;
@@ -349,7 +348,7 @@ public:
 
 		maxX = std::max(currentTruncX13, std::max(currentTruncX12, (int)x3));
 		minX = std::min(currentTruncX13, std::min(currentTruncX12, (int)x3));
-		drawline(minX, maxX, currentTruncY);
+		drawline(minX, maxX, currentTruncY, 10);
 	}
 
 	/*
